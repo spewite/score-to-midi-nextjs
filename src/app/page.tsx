@@ -1,8 +1,11 @@
 "use client"
 
+import React, { useState } from "react";
 import { ChangeEvent } from "react";
 
 export default function Home() {
+
+  const [downloadUrl, setDownloadUrl] = useState<string|undefined>(undefined);
 
   const handleFileUpload = async (event: ChangeEvent) => {
     
@@ -22,12 +25,22 @@ export default function Home() {
     });
   
     const result = await response.json();
+
+    if (result.downloadUrl) {
+      setDownloadUrl(result.downloadUrl);
+    }
+
     console.log(result);
   };
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-950">
-      <input type="file" onChange={(e) => handleFileUpload(e)} />
+      <form>
+        <input type="file" onChange={(e) => handleFileUpload(e)} />
+        <input type="submit" className="bg-gray-500" />
+      </form>
+      
+      {downloadUrl && <a href={downloadUrl}>Download</a>}
     </div>
   );
 }
