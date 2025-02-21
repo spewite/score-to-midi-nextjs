@@ -13,6 +13,8 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string|undefined>(undefined);
   const [success, setSuccess] = useState<string|undefined>(undefined);
+  const [downlaodURL, setDownloadURL] = useState<string|null>(null);
+  const [downlaodName, setDownloadName] = useState<string|null>(null);
 
   const handleFileUpload = async () => {
     
@@ -27,7 +29,7 @@ export default function Home() {
       setLoading(true);
       setError(undefined);
       setSuccess(undefined);
-      setDownloadUUID(undefined);
+      setDownloadURL(undefined);
 
       const formData = new FormData();
       formData.append("file", imageFile);
@@ -36,39 +38,7 @@ export default function Home() {
         method: "POST",
         body: formData,
       });
-    
-      const result = await response.json();
-
-      console.log("Received UUID: ", result?._uuid);
-
-      if (result?.error) {
-        setError(result.error);
-      }
-
-      if (result?._uuid) {
-        setDownloadUUID(result._uuid);
-        setSuccess("The file has been converted successfully!");
-      }
-
-      console.log("handleFileUpload() ended")
-      setLoading(false);
-
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      }
-    }
-
-  };
-  
-  async function handleDownload() {
-    
-    try {
       
-      if (!downloadUUID) {return}
-
-      const response = await fetch(`http://127.0.0.1:5000/api/download/${downloadUUID}`);
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to download file");
@@ -76,24 +46,20 @@ export default function Home() {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-
-      const filename = imageFile.name.split('.')[0] + ".midi";
-      a.download = filename;
-
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      window.URL.revokeObjectURL(url);
+    
+      setDownloadURL(url);
+      setDownloadName(imageFile.name.split('.')[0] + ".midi");
 
     } catch (error) {
-        console.error("Error downloading MIDI file:", error);
-        alert(error.message);
+      if (error instanceof Error) {
+        setError(error.message);
+      }
+    } finally {
+      console.log("handleFileUpload() ended")
+      setLoading(false);
     }
-  }
+
+  };
 
   const restart = () => {
     setDownloadUUID(undefined);
@@ -128,14 +94,8 @@ export default function Home() {
 
       {loading && (<Spinner /> )}
       
-      {downloadUUID && ( 
-        
-        <button 
-          className="bg-blue-500 p-3 rounded-lg"
-          onClick={() => handleDownload()}
-        >
-          Download
-        </button>
+      {downlaodURL && ( 
+        <a className="bg-blue-500 p-3 rounded-lg" href={downlaodURL} download={downlaodName} target="_blank">Download</a>
       )}
 
       {error && (
