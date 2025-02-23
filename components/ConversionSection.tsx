@@ -23,6 +23,11 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const midiPlayer = useRef<Tone.Part | null>(null)
 
   useEffect(() => {
+    // When the uploaded file changes remove the error.
+    setError(null);
+  }, [file]);
+
+  useEffect(() => {
     synth.current = new Tone.Sampler({
       urls: {
         A0: "A0.mp3",
@@ -188,7 +193,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
       {midiUrl && (
         <div 
-          className="w-1/2 mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-700 fondo animate-fadeIn"
+          className="w-1/2 mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-700 card-background animate-fadeIn"
         >
           <h3 className="text-2xl font-semibold mb-4 text-gray-100 text-center">
             Your MIDI File is Ready!
