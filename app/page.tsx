@@ -24,8 +24,8 @@ export default function Home() {
           <Button>Create Account</Button>
         </nav> */}
       </header>
-      <main className="flex-grow bg-[#131313]">
-        <section className="container mx-auto px-4 py-8 md:py-16 animate-fadeIn">
+      <main className="flex justify-center items-center flex-grow site-background">
+        <section className="container animate-fadeIn">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight sm:text-5xl text-center mb-8">
             Convert Music Scores to MIDI
           </h1>

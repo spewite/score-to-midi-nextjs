@@ -2,8 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-.fondo {
-  background: radial-gradient(ellipse at 40% 0%, #40456010 0, #141414 75%), radial-gradient(ellipse at 60% 0%, #0e0e0e33 0, #01050a 75%);
+
+.site-background {
+  background: radial-gradient(ellipse at 50% 0%, #6977c410 0, #080808 83%), radial-gradient(ellipse at 50% 1%, #120e0e33 0, #050a10 55%);
+}
+
+.card-background {
+  background: radial-gradient(ellipse at 40% 0%, #40456010 0, #080a0d 75%), radial-gradient(ellipse at 60% 0%, #0e0e0e33 0, #01050a 75%);
 }
 
 @layer base {
