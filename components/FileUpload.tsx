@@ -5,6 +5,8 @@ import { useDropzone } from "react-dropzone"
 import { Upload, X } from "lucide-react"
 import Image from "next/image"
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { AllowedExtensions } from "./AllowedExtensions"
+import { toast } from "sonner"
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
@@ -18,13 +20,24 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
+  const allowedImageExtensions = [".svg", ".png", ".jpg", ".jpeg", ".bmp"];
+  const allowedExtensions: string[] = [".pdf", ...allowedImageExtensions];
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const uploadedFile = acceptedFiles[0]
+
+      const extension = uploadedFile.name.substring(uploadedFile.name.lastIndexOf(".")).toLowerCase()
+
+      if (!allowedExtensions.includes(extension)) {
+        toast.error("Uploaded file extension is not supported!")
+        return;
+      }
+
       setFile(uploadedFile)
 
       // Check if the file is a PDF
-      if (uploadedFile.type === "application/pdf") {
+      if (uploadedFile.type === "application/pdf" || extension === ".pdf") {
         // Use FileReader to load the file as an ArrayBuffer
         const fileReader = new FileReader()
         fileReader.onload = async (e) => {
@@ -66,7 +79,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".svg", ".png", ".jpg", ".jpeg"],
+      "image/*": allowedImageExtensions,
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,
@@ -121,7 +134,8 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
       <div className="flex items-center justify-center">
         {preview ? (
           <div className="grid grid-cols-[1fr_40%_1fr] w-full">
-            <div>
+            <div className="flex items-center">
+              <AllowedExtensions allowedExtensions={allowedExtensions} />
             </div>
             <div className="flex items-center justify-center">
               <Image
@@ -162,6 +176,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
             <p className="text-sm text-muted-foreground mt-2">
               or click to select a file
             </p>
+            <AllowedExtensions allowedExtensions={allowedExtensions} />
           </div>
         )}
       </div>

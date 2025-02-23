@@ -204,7 +204,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                 asChild 
                 className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
               >
-                <a href={midiUrl} download={file?.name || "converted_score.midi"}>
+                <a href={midiUrl} download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}>
                   <Download className="mr-2 h-4 w-4" />
                   Download MIDI
                 </a>
