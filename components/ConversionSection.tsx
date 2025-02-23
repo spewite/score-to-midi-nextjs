@@ -110,40 +110,54 @@ export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, set
   }
 
   const playMidi = async () => {
-    if (!midiUrl || !synth.current) return
-
-    const midi = await Midi.fromUrl(midiUrl)
-    const now = Tone.now() + 0.5
-
+    if (!midiUrl || !synth.current) return;
+  
+    // Reset the transport to ensure immediate playback
+    Tone.Transport.stop();
+    Tone.Transport.position = 0;
+    Tone.Transport.cancel();
+  
+    const midi = await Midi.fromUrl(midiUrl);
+    const offset = 0.5; // schedule events to start 0.5s after transport starts
+  
     const midiEvents = midi.tracks.flatMap((track) =>
       track.notes.map((note) => ({
-        time: note.time + now,
+        time: note.time + offset, // schedule relative to the transport start
         note: note.name,
         duration: note.duration,
         velocity: note.velocity,
-      })),
-    )
-
+      }))
+    );
+  
+    // Create a new Tone.Part and start it at time 0 of the transport timeline
     midiPlayer.current = new Tone.Part((time, event) => {
-      synth.current?.triggerAttackRelease(event.note, event.duration, time, event.velocity)
-    }, midiEvents).start(0)
-
-    Tone.Transport.start()
-    setIsPlaying(true)
-  }
-
-  const pauseMidi = () => {
-    Tone.Transport.pause()
-    setIsPlaying(false)
-  }
+      synth.current?.triggerAttackRelease(
+        event.note,
+        event.duration,
+        time,
+        event.velocity
+      );
+    }, midiEvents).start(0);
+  
+    Tone.Transport.start();
+    setIsPlaying(true);
+  };
 
   const stopMidi = () => {
-    Tone.Transport.stop()
+    // Stop the transport and the midi part.
+    Tone.Transport.stop();
+  
     if (midiPlayer.current) {
-      midiPlayer.current.stop()
+      midiPlayer.current.stop();
+      midiPlayer.current.dispose(); // Clean up the Tone.Part instance
+      midiPlayer.current = null;
     }
-    synth.current?.releaseAll()
-    setIsPlaying(false)
+    
+    // Optionally clear all events from the Transport if needed.
+    Tone.Transport.cancel();
+  
+    synth.current?.releaseAll();
+    setIsPlaying(false);
   }
 
   return (
@@ -182,13 +196,13 @@ export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, set
                 </a>
               </Button>
               <Button
-                onClick={isPlaying ? pauseMidi : playMidi}
-                className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-blue-600 to-blue-900 hover:from-blue-700 hover:to-blue-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
+                onClick={isPlaying ? stopMidi : playMidi}
+                className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-green-600 to-green-900 hover:from-green-700 hover:to-green-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
               >
                 {isPlaying ? (
                   <>
                     <Pause className="h-4 w-4" />
-                    Pause Playback
+                    Stop Playback
                   </>
                 ) : (
                   <>
