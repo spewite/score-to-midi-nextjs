@@ -9,13 +9,14 @@ import { toast } from "sonner"
 
 interface ConversionSectionProps { 
   file: File,
+  setFile: (file: File | null) => void;
   midiUrl: string | null,
-  setMidiUrl: Function,
+  setMidiUrl: (midiUrl: string | null) => void,
   isConverting: boolean,
-  setIsConverting: Function
+  setIsConverting: (isConverting: boolean) => void;
 }
 
-export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, setIsConverting }: ConversionSectionProps) {
+export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting }: ConversionSectionProps) {
   const [error, setError] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const synth = useRef<Tone.Sampler | null>(null)
@@ -160,6 +161,14 @@ export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, set
     setIsPlaying(false);
   }
 
+  const handleConvertNext = () => {
+    setError(null);
+    setIsPlaying(false);
+    setMidiUrl(null);
+    setFile(null);
+    setMidiUrl(null);
+  }
+
   return (
     <div className="mt-8 flex flex-col items-center">
       {!midiUrl && (
@@ -216,6 +225,7 @@ export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, set
               <Button 
                 className="w-full sm:w-auto bg-gradient-to-r transition ease-in-out duration-200"
                 variant={"outline"}
+                onClick={handleConvertNext}
               >
                 <ArrowRight className="h-4 w-4"/>
                 Convert Next

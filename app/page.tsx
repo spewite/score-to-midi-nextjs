@@ -1,18 +1,15 @@
 "use client"
 
 import { FileUpload } from "@/components/FileUpload"
-import { Button } from "@/components/ui/button"
 import { Music } from "lucide-react"
-import { ThemeToggle } from "@/components/ThemeToggle"
 import Link from "next/link"
 import { useState } from "react"
 import { ConversionSection } from "@/components/ConversionSection"
-import { toast } from 'sonner';
 
 export default function Home() {
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [midiUrl, setMidiUrl] = useState<string | null>(null)
   const [isConverting, setIsConverting] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -36,12 +33,19 @@ export default function Home() {
             Transform your sheet music into playable MIDI files with ease. Just upload your score and let us do the
             rest.
           </p>
-          {!midiUrl && <FileUpload onFileUpload={setUploadedFile} isConverting={isConverting} /> }
-          {uploadedFile &&  (
+          {!midiUrl && (
+            <FileUpload 
+              isConverting={isConverting}
+              file={file}
+              setFile={setFile}
+            />)
+          }
+          {file &&  (
             <ConversionSection 
               midiUrl={midiUrl}
               setMidiUrl={setMidiUrl}
-              file={uploadedFile}
+              file={file}
+              setFile={setFile}
               isConverting={isConverting}
               setIsConverting={setIsConverting}
           />)}

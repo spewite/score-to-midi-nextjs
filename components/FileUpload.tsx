@@ -6,12 +6,12 @@ import { Upload, X } from "lucide-react"
 import Image from "next/image"
 
 interface FileUploadProps {
-  onFileUpload: (file: File | null) => void;
   isConverting: boolean;
+  file: File | null;
+  setFile: (file: File | null) => void;
 }
 
-export function FileUpload({ onFileUpload, isConverting }: FileUploadProps) {
-  const [file, setFile] = useState<File | null>(null)
+export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -20,9 +20,8 @@ export function FileUpload({ onFileUpload, isConverting }: FileUploadProps) {
       const uploadedFile = acceptedFiles[0]
       setFile(uploadedFile)
       setPreview(URL.createObjectURL(uploadedFile))
-      onFileUpload(uploadedFile)
     },
-    [onFileUpload],
+    [setFile],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -65,7 +64,6 @@ export function FileUpload({ onFileUpload, isConverting }: FileUploadProps) {
   const removeFile = () => {
     setFile(null)
     setPreview(null)
-    onFileUpload(null)
   }
 
   return (
