@@ -69,7 +69,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
   return (
     <div
       {...getRootProps()}
-      className={`w-full border-2 border-dashed rounded-lg p-8 text-center ${isConverting ? 'cursor-wait' : 'cursor-pointer'} transition-colors ${
+      className={`w-full border-2 border-dashed rounded-lg p-8 text-center animate-fadeIn ${isConverting ? 'cursor-wait' : 'cursor-pointer'} transition-colors ${
         isDragActive || isDragging ? "border-primary bg-primary/10" : "border-muted-foreground"
       }`}
     >
@@ -79,15 +79,16 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
           <div className="grid grid-cols-[1fr_40%_1fr] w-full">
             <div></div>
             <div className="flex items-center justify-center">
-              <Image
-                src={preview || "/placeholder.svg"}
-                alt="File preview"
-                width={300}
-                height={300}
-                className="object-contain rounded-lg animate-fadeIn"
-              />
+            <Image
+              src={preview || "/placeholder.svg"}
+              alt="File preview"
+              width={300}
+              height={300}
+              className="object-contain rounded-lg animate-fadeIn max-h-[500px]"
+            />
+
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center text-left">
               <div>
                 <p className="text-lg font-medium mb-2">{file?.name}</p>
                 <button
