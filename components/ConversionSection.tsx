@@ -172,7 +172,10 @@ export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, set
           </h3>
           <div className="flex flex-col gap-4 justify-center items-center">
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
-              <Button asChild className="w-full sm:w-auto">
+              <Button 
+                asChild 
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
+              >
                 <a href={midiUrl} download="converted_score.mid">
                   <Download className="mr-2 h-4 w-4" />
                   Download MIDI
@@ -180,24 +183,27 @@ export function ConversionSection({ file, midiUrl, setMidiUrl, isConverting, set
               </Button>
               <Button
                 onClick={isPlaying ? pauseMidi : playMidi}
-                className="w-full sm:w-auto bg-slate-200 hover:bg-slate-100 transition-all"
+                className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-blue-600 to-blue-900 hover:from-blue-700 hover:to-blue-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
               >
                 {isPlaying ? (
                   <>
-                    <Pause className="mr-2 h-4 w-4" />
+                    <Pause className="h-4 w-4" />
                     Pause Playback
                   </>
                 ) : (
                   <>
-                    <Play className="mr-2 h-4 w-4" />
+                    <Play className="h-4 w-4" />
                     Play MIDI
                   </>
                 )}
               </Button>
             </div>
-            <div className="w-full flex justify-center ">
-              <Button className="w-full sm:w-auto" variant={"outline"}>
-                <ArrowRight />
+            <div className="w-full flex justify-center">
+              <Button 
+                className="w-full sm:w-auto bg-gradient-to-r transition ease-in-out duration-200"
+                variant={"outline"}
+              >
+                <ArrowRight className="h-4 w-4"/>
                 Convert Next
               </Button>
             </div>
