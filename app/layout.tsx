@@ -6,9 +6,8 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "score-to-midi",
+  title: "Score to Midi",
   description: "Convert music scores to MIDI files",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
