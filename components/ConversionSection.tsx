@@ -76,7 +76,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     }
   }, [])
 
-  const handleConvert = async () => {
+  const fileConversion = async () => {
 
     posthog.capture('convertButtonClicked', { fileName: file.name });
 
@@ -95,8 +95,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
       // Handle error
       if (!response.ok) {
 
-        toast.error('An error occurred during conversion. Please try again.')
-
         const reponseData = await response.json();
         if (reponseData?.error) {
           throw new Error(reponseData?.error);
@@ -114,9 +112,18 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
       if (err instanceof Error) {
         setError(err.message || "An error occurred during conversion. Please try again.")
       }
+      throw err;
     } finally {
       setIsConverting(false)
     }
+  }
+
+  const handleConversion = () => {
+    toast.promise(fileConversion(), {
+      loading: "The conversion may take up to 1 minute 🙌",
+      success: "The score has been converted successfully! 😎",
+      error: "An error occurred during conversion 😬."
+    })
   }
 
   const playMidi = async () => {
@@ -188,7 +195,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   return (
     <div className="mt-8 flex flex-col items-center">
       {!midiUrl && (
-        <Button onClick={handleConvert} disabled={isConverting}>
+        <Button onClick={handleConversion} disabled={isConverting}>
           {isConverting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

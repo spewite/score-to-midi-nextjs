@@ -137,7 +137,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
       <div className="flex items-center justify-center">
         {preview ? (
           <div className="grid grid-cols-[1fr_40%_1fr] w-full">
-            <div className="flex items-center">
+            <div className="flex items-center justify-center">
               <AllowedExtensions allowedExtensions={allowedExtensions} />
             </div>
             <div className="flex items-center justify-center">
@@ -149,7 +149,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
                 className="object-contain rounded-lg animate-fadeIn max-h-[500px]"
               />
             </div>
-            <div className="flex items-center text-left">
+            <div className="flex items-center justify-center text-left">
               <div>
                 <p className="text-lg font-medium mb-2">{file?.name}</p>
                 <button
