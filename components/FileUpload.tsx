@@ -7,6 +7,7 @@ import Image from "next/image"
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { AllowedExtensions } from "./AllowedExtensions"
 import { toast } from "sonner"
+import posthog from "posthog-js"
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
@@ -35,6 +36,8 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
       }
 
       setFile(uploadedFile)
+
+      posthog.capture('fileAttached', {fileName: uploadedFile.name});
 
       // Check if the file is a PDF
       if (uploadedFile.type === "application/pdf" || extension === ".pdf") {

@@ -6,6 +6,7 @@ import { Loader2, Download, Play, Pause, ArrowRight } from "lucide-react"
 import { Midi } from "@tonejs/midi"
 import * as Tone from "tone"
 import { toast } from "sonner"
+import posthog from "posthog-js"
 
 interface ConversionSectionProps { 
   file: File,
@@ -76,6 +77,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   }, [])
 
   const handleConvert = async () => {
+
+    posthog.capture('convertButtonClicked', { fileName: file.name });
+
     setIsConverting(true)
     setError(null)
 
@@ -116,6 +120,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   }
 
   const playMidi = async () => {
+
+    posthog.capture('playMidiClicked', { fileName: file.name });
+
     if (!midiUrl || !synth.current) return;
   
     // Reset the transport to ensure immediate playback
@@ -150,6 +157,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   };
 
   const stopMidi = () => {
+
+    posthog.capture('stopMidiClicked', { fileName: file.name });
+
     // Stop the transport and the midi part.
     Tone.Transport.stop();
   
@@ -167,6 +177,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   }
 
   const handleConvertNext = () => {
+    posthog.capture('convertNextClicked', { fileName: file.name });
     setError(null);
     setIsPlaying(false);
     setMidiUrl(null);
@@ -204,7 +215,13 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                 asChild 
                 className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
               >
-                <a href={midiUrl} download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}>
+                <a 
+                  href={midiUrl} 
+                  download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}
+                  onClick={() => {
+                    posthog.capture('downloadClicked', { fileName: file.name });
+                  }}
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Download MIDI
                 </a>
