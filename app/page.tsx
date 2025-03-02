@@ -25,7 +25,7 @@ export default function Home() {
         </nav> */}
       </header>
       <main className="flex justify-center items-center flex-grow site-background">
-        <section className="container animate-fadeIn">
+        <section className="container animate-fadeIn py-16">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight sm:text-5xl text-center mb-8">
             Convert Music Scores to MIDI
           </h1>
