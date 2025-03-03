@@ -85,12 +85,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
     const formData = new FormData()
     formData.append("file", file)
-    
-    console.log("process.env")
-    console.log(process.env)
-
-    console.log("process.env.NEXT_PUBLIC_BACKEND_URL");
-    console.log(process.env.NEXT_PUBLIC_BACKEND_URL);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/upload`, {
