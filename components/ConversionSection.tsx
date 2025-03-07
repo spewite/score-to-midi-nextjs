@@ -120,7 +120,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
   const handleConversion = () => {
     toast.promise(fileConversion(), {
-      loading: "The conversion may take up to 1 minute 🙌",
+      loading: "The conversion may take up to 2 minute 🙌",
       success: "The score has been converted successfully! 😎",
       error: "An error occurred during conversion 😬."
     })
