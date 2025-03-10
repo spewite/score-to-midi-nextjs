@@ -18,14 +18,19 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
+
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
 
   const allowedImageExtensions = [".svg", ".png", ".jpg", ".jpeg", ".bmp"];
   const allowedExtensions: string[] = [".pdf", ...allowedImageExtensions];
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
+
+      if (isConverting) return;
+
       const uploadedFile = acceptedFiles[0]
 
       const extension = uploadedFile.name.substring(uploadedFile.name.lastIndexOf(".")).toLowerCase()
@@ -37,7 +42,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
 
       setFile(uploadedFile)
 
-      posthog.capture('fileAttached', {fileName: uploadedFile.name});
+      posthog.capture('fileAttached', { fileName: uploadedFile.name });
 
       // Check if the file is a PDF
       if (uploadedFile.type === "application/pdf" || extension === ".pdf") {
@@ -76,7 +81,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
         setPreview(URL.createObjectURL(uploadedFile))
       }
     },
-    [setFile],
+    [setFile, isConverting],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -90,15 +95,18 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
 
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
+      if (isConverting) return;
       e.preventDefault()
       setIsDragging(true)
     }
 
     const handleDragLeave = () => {
+      if (isConverting) return;
       setIsDragging(false)
     }
 
     const handleDrop = (e: DragEvent) => {
+      if (isConverting) return;
       e.preventDefault()
       setIsDragging(false)
       if (e.dataTransfer?.files) {
@@ -115,7 +123,29 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
       window.removeEventListener("dragleave", handleDragLeave)
       window.removeEventListener("drop", handleDrop)
     }
-  }, [onDrop])
+  }, [onDrop, isConverting])
+
+  useEffect(() => {
+    const droparea = document.getElementById("droparea");
+    
+    const handleMouseEnter = () => {
+      if (!isConverting) {
+        setIsHovering(true);
+      }
+    };
+    
+    const handleMouseLeave = () => {
+      setIsHovering(false);
+    };
+    
+    droparea?.addEventListener("mouseenter", handleMouseEnter);
+    droparea?.addEventListener("mouseleave", handleMouseLeave);
+    
+    return () => {
+      droparea?.removeEventListener("mouseenter", handleMouseEnter);
+      droparea?.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [isConverting]);
 
   const removeFile = () => {
     setFile(null)
@@ -125,13 +155,14 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
   return (
     <div
       {...getRootProps()}
-      className={`w-full border-2 border-dashed rounded-lg p-8 text-center animate-fadeIn ${
-        isConverting ? "cursor-wait" : "cursor-pointer"
-      } transition-colors ${
-        isDragActive || isDragging
+      id="droparea"
+      className={`w-full border-2 border-dashed rounded-lg p-8 text-center animate-fadeIn transition-all 
+        ${isConverting ? "cursor-wait" : "cursor-pointer"}
+        ${(isDragActive && !isConverting) || isDragging || isHovering
           ? "border-primary bg-primary/10"
-          : "border-muted-foreground"
-      }`}
+          : "border-muted-foreground"}
+        `
+      }
     >
       {!isConverting && <input {...getInputProps()} />}
       <div className="flex items-center justify-center">
@@ -146,7 +177,8 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
                 alt="File preview"
                 width={300}
                 height={300}
-                className="object-contain rounded-lg animate-fadeIn max-h-[500px]"
+                className="object-contain rounded-lg animate-fadeIn max-h-[500px] select-none"
+                draggable={false}
               />
             </div>
             <div className="flex items-center justify-center text-left">
