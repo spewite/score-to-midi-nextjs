@@ -136,7 +136,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
       {!isConverting && <input {...getInputProps()} />}
       <div className="flex items-center justify-center">
         {preview ? (
-          <div className="grid grid-cols-[1fr_40%_1fr] w-full">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_40%_1fr] gap-2 w-full">
             <div className="flex items-center justify-center">
               <AllowedExtensions allowedExtensions={allowedExtensions} />
             </div>

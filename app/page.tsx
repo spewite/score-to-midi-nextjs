@@ -29,10 +29,10 @@ export default function Home() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight sm:text-5xl text-center mb-8">
             Convert Music Scores to MIDI
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-prose mx-auto text-center mb-12">
+          <h2 className="text-lg md:text-xl text-muted-foreground max-w-prose mx-auto text-center mb-12">
             Transform your sheet music into playable MIDI files with ease. Just upload your score and let us do the
             rest.
-          </p>
+          </h2>
           {!midiUrl && (
             <FileUpload 
               isConverting={isConverting}

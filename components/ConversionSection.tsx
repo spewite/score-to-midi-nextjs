@@ -211,13 +211,13 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
       {midiUrl && (
         <div 
-          className="w-1/2 mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-700 card-background animate-fadeIn"
+          className="w-full md:w-1/2 mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-700 card-background animate-fadeIn"
         >
           <h3 className="text-2xl font-semibold mb-4 text-gray-100 text-center">
             Your MIDI File is Ready!
           </h3>
-          <div className="flex flex-col gap-4 justify-center items-center">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
+          <div className="w-full flex flex-col gap-4 justify-center items-center">
+            <div className="w-full flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
               <Button 
                 asChild 
                 className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
