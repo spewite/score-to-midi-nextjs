@@ -25,7 +25,7 @@ export default function Home() {
         </nav> */}
       </header>
       <main className="flex justify-center items-center flex-grow site-background">
-        <section className="container animate-fadeIn py-16">
+        <section className="container animate-fadeIn py-16 flex flex-col items-center">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight sm:text-5xl text-center mb-8">
             Convert Music Scores to MIDI
           </h1>
@@ -34,21 +34,22 @@ export default function Home() {
             rest.
           </h2>
           {!midiUrl && (
-            <FileUpload 
+            <FileUpload
               isConverting={isConverting}
               file={file}
               setFile={setFile}
             />)
           }
-          {file &&  (
-            <ConversionSection 
+          {file && (
+            <ConversionSection
               midiUrl={midiUrl}
               setMidiUrl={setMidiUrl}
               file={file}
               setFile={setFile}
               isConverting={isConverting}
               setIsConverting={setIsConverting}
-          />)}
+            />)}
+
         </section>
       </main>
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
