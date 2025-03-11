@@ -7,8 +7,9 @@ import { Midi } from "@tonejs/midi"
 import * as Tone from "tone"
 import { toast } from "sonner"
 import posthog from "posthog-js"
+import WaifuSuggestion from "./WaifuSuggestion"
 
-interface ConversionSectionProps { 
+interface ConversionSectionProps {
   file: File,
   setFile: (file: File | null) => void;
   midiUrl: string | null,
@@ -131,15 +132,15 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     posthog.capture('playMidiClicked', { fileName: file.name });
 
     if (!midiUrl || !synth.current) return;
-  
+
     // Reset the transport to ensure immediate playback
     Tone.Transport.stop();
     Tone.Transport.position = 0;
     Tone.Transport.cancel();
-  
+
     const midi = await Midi.fromUrl(midiUrl);
     const offset = 0.5; // schedule events to start 0.5s after transport starts
-  
+
     const midiEvents = midi.tracks.flatMap((track) =>
       track.notes.map((note) => ({
         time: note.time + offset, // schedule relative to the transport start
@@ -148,7 +149,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         velocity: note.velocity,
       }))
     );
-  
+
     // Create a new Tone.Part and start it at time 0 of the transport timeline
     midiPlayer.current = new Tone.Part((time, event) => {
       synth.current?.triggerAttackRelease(
@@ -158,7 +159,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         event.velocity
       );
     }, midiEvents).start(0);
-  
+
     Tone.Transport.start();
     setIsPlaying(true);
   };
@@ -169,16 +170,16 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
     // Stop the transport and the midi part.
     Tone.Transport.stop();
-  
+
     if (midiPlayer.current) {
       midiPlayer.current.stop();
       midiPlayer.current.dispose(); // Clean up the Tone.Part instance
       midiPlayer.current = null;
     }
-    
+
     // Optionally clear all events from the Transport if needed.
     Tone.Transport.cancel();
-  
+
     synth.current?.releaseAll();
     setIsPlaying(false);
   }
@@ -193,77 +194,85 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   }
 
   return (
-    <div className="mt-8 flex flex-col items-center">
-      {!midiUrl && (
-        <Button onClick={handleConversion} disabled={isConverting}>
-          {isConverting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Converting...
-            </>
-          ) : (
-            "Convert to MIDI"
-          )}
-        </Button>
-      )}
-      
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+    <>
 
-      {midiUrl && (
-        <div 
-          className="w-full md:w-1/2 mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-700 card-background animate-fadeIn"
-        >
-          <h3 className="text-2xl font-semibold mb-4 text-gray-100 text-center">
-            Your MIDI File is Ready!
-          </h3>
-          <div className="w-full flex flex-col gap-4 justify-center items-center">
-            <div className="w-full flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
-              <Button 
-                asChild 
-                className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
-              >
-                <a 
-                  href={midiUrl} 
-                  download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}
-                  onClick={() => {
-                    posthog.capture('downloadClicked', { fileName: file.name });
-                  }}
+      <div className="w-full mt-8 flex flex-col items-center">
+        {!midiUrl && (
+          <Button onClick={handleConversion} disabled={isConverting}>
+            {isConverting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Converting...
+              </>
+            ) : (
+              "Convert to MIDI"
+            )}
+          </Button>
+        )}
+
+        {error && <p className="text-red-500 mt-4">{error}</p>}
+
+        {midiUrl && (
+          <div
+            className="w-full md:w-1/2 mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-700 card-background animate-fadeIn"
+          >
+            <h3 className="text-2xl font-semibold mb-4 text-gray-100 text-center">
+              Your MIDI File is Ready!
+            </h3>
+            <div className="w-full flex flex-col gap-4 justify-center items-center">
+              <div className="w-full flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
+                <Button
+                  asChild
+                  className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
                 >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download MIDI
-                </a>
-              </Button>
-              <Button
-                onClick={isPlaying ? stopMidi : playMidi}
-                className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-green-600 to-green-900 hover:from-green-700 hover:to-green-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
-              >
-                {isPlaying ? (
-                  <>
-                    <Pause className="h-4 w-4" />
-                    Stop Playback
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4" />
-                    Play MIDI
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="w-full flex justify-center">
-              <Button 
-                className="w-full sm:w-auto bg-gradient-to-r transition ease-in-out duration-200"
-                variant={"outline"}
-                onClick={handleConvertNext}
-              >
-                <ArrowRight className="h-4 w-4"/>
-                Convert Next
-              </Button>
+                  <a
+                    href={midiUrl}
+                    download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}
+                    onClick={() => {
+                      posthog.capture('downloadClicked', { fileName: file.name });
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download MIDI
+                  </a>
+                </Button>
+                <Button
+                  onClick={isPlaying ? stopMidi : playMidi}
+                  className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-green-600 to-green-900 hover:from-green-700 hover:to-green-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
+                >
+                  {isPlaying ? (
+                    <>
+                      <Pause className="h-4 w-4" />
+                      Stop Playback
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Play MIDI
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="w-full flex justify-center">
+                <Button
+                  className="w-full sm:w-auto bg-gradient-to-r transition ease-in-out duration-200"
+                  variant={"outline"}
+                  onClick={handleConvertNext}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Convert Next
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {error?.includes("Please, upload the image with higher quality.") && (
+        <WaifuSuggestion />
       )}
-    </div>
+
+    </>
   )
 }
 
