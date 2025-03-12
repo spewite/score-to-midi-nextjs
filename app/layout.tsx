@@ -11,12 +11,14 @@ export const metadata = {
   title: "Score to MIDI - Convert Music Scores to MIDI Files Fast",
   description: "Easily convert your PDF or image-based music scores into high-quality MIDI files. Try our fast, free conversion tool today!",
   keywords: "music score conversion, PDF to MIDI, image to MIDI, MIDI converter, score-to-midi",
-  // Additional SEO metadata
   openGraph: {
-    title: "Score to MIDI",
+    title: "Convert sheet music into MIDI.",
     description: "Convert your music scores to MIDI files with our fast and accurate tool.",
     url: "https://score-to-midi.com/",
     type: "website",
+    icons: {
+      icon: '/favicon.ico',
+    },
     images: [
       {
         url: "https://score-to-midi.com/open_graph.png",
@@ -26,10 +28,6 @@ export const metadata = {
       },
     ],
   },
-  // twitter: {
-  //   card: "summary_large_image",
-  //   site: "@yourTwitterHandle",
-  // },
 }
 
 export default function RootLayout({
