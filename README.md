@@ -15,7 +15,7 @@ Ensure you have the following installed:
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/your-username/score-to-midi-frontend.git
+git clone https://github.com/spewite/score-to-midi-nextjs
 cd score-to-midi-nextjs
 npm install --force
 ```
