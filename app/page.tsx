@@ -1,3 +1,4 @@
+// app/page.tsx
 "use client"
 
 import { FileUpload } from "@/components/FileUpload"
@@ -5,11 +6,15 @@ import { Music } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { ConversionSection } from "@/components/ConversionSection"
+import KofiButtonWidget from "@/components/KofiButtonWidget" // Import the Ko-fi button
 
 export default function Home() {
   const [midiUrl, setMidiUrl] = useState<string | null>(null)
   const [isConverting, setIsConverting] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+
+  // State to control Ko-fi button visibility
+  const [showKofiButton, setShowKofiButton] = useState(true);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -24,7 +29,7 @@ export default function Home() {
           <Button>Create Account</Button>
         </nav> */}
       </header>
-      <main className="flex justify-center items-center flex-grow site-background">
+      <main className="flex justify-center items-center flex-grow site-background relative">
         <section className="container animate-fadeIn py-16 flex flex-col items-center">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight sm:text-5xl text-center mb-8">
             Convert Music Scores to MIDI
@@ -48,9 +53,16 @@ export default function Home() {
               setFile={setFile}
               isConverting={isConverting}
               setIsConverting={setIsConverting}
+              setShowKofiButton={setShowKofiButton}
             />)}
 
         </section>
+        
+        {showKofiButton && (
+          <div className="absolute top-5 z-40 animate-fadeIn"> 
+            <KofiButtonWidget />
+          </div>
+        )}
       </main>
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
         © 2025 score-to-midi. All rights reserved.
@@ -58,4 +70,3 @@ export default function Home() {
     </div>
   )
 }
-
