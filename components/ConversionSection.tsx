@@ -21,6 +21,7 @@ interface ConversionSectionProps {
 }
 
 export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting }: ConversionSectionProps) {
+ 
   // State and refs
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -30,8 +31,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const synth = useRef<Tone.Sampler | null>(null);
   const midiPlayer = useRef<Tone.Part | null>(null);
   const { user, loading } = useUserWithSubscription();
-  // Helper to determine if user can download
-  const canDownload = (!!user && user.subscription_status === 'active') || oneTimePurchased;
+  
+   // Download permission state
+   const [canDownload, setCanDownload] = useState((!!user && user.subscription?.status === 'active') || oneTimePurchased);
 
   useEffect(() => {
     // When the uploaded file changes remove the error.
@@ -221,11 +223,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const handleSubscribe = async () => {
     setShowDownloadModal(false);
     if (!user) {
-      // If not logged in, trigger Google login
-      window.location.href = '/'; // Or trigger login logic
+      window.location.href = '/';
       return;
     }
-    // Call backend to create Stripe subscription session
     const res = await fetch('/api/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -233,8 +233,28 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     });
     const data = await res.json();
     if (data.url) {
-      window.location.href = data.url;
+      window.open(data.url, '_blank'); // Open Stripe in new tab
+      // Show toast while waiting
+      toast('Waiting for payment confirmation...', { duration: 4000 });
+      // Poll for subscription status
+      pollForSubscription();
     }
+  };
+
+  // Polls the backend for subscription status
+  const pollForSubscription = () => {
+    const interval = setInterval(async () => {
+      // You may want to use your own API endpoint or Supabase client here
+      // For this example, we assume useUserWithSubscription updates automatically, so we refetch user
+      const res = await fetch('/api/user'); // Replace with your actual endpoint if different
+      const data = await res.json();
+      if (data.subscription?.status === 'active') {
+        clearInterval(interval);
+        toast.success('Subscription successful!');
+        // Optionally update UI state here to enable download
+        setCanDownload(true); // You may need to define this state if not present
+      }
+    }, 3000); // Poll every 3 seconds
   };
 
   // Handler for one-time purchase button in modal

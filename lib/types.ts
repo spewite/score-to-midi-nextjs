@@ -5,7 +5,7 @@ export interface Subscription {
   user_id: string;
   stripe_customer_id: string;
   stripe_subscription_id: string;
-  status: string;
+  status: 'active' | 'inactive';
   current_period_end: string; // ISO date string
   created_at: string; // ISO date string
 }

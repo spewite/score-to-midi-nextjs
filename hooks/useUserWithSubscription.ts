@@ -40,9 +40,6 @@ export function useUserWithSubscription() {
         .eq('id', authUser.id)
         .single();
 
-      console.log("profile");
-      console.log(profile);
-
       // 2. Read active subscription (if exists)
       let subscription = null;
       if (profile) {
@@ -65,9 +62,6 @@ export function useUserWithSubscription() {
           };
         }
       }
-
-      console.log("subscription");
-      console.log(subscription);
 
       if (mounted) {
         if (profile) {
