@@ -13,17 +13,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="flex items-center justify-between px-6 py-4 border-b">
-        <Link href="/" className="flex items-center space-x-2">
-          <Music className="w-6 h-6" />
-          <span className="text-xl font-bold">score-to-midi</span>
-        </Link>
-        {/* <nav className="flex items-center space-x-4">
-          <ThemeToggle />
-          <Button variant="ghost">Sign In</Button>
-          <Button>Create Account</Button>
-        </nav> */}
-      </header>
+      
       <main className="flex justify-center items-center flex-grow site-background">
         <section className="container animate-fadeIn py-16 flex flex-col items-center">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight sm:text-5xl text-center mb-8">

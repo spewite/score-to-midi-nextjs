@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Loader2, Download, Play, Pause, ArrowRight } from "lucide-react"
-import { Midi } from "@tonejs/midi"
-import * as Tone from "tone"
-import { toast } from "sonner"
-import posthog from "posthog-js"
-import WaifuSuggestion from "./WaifuSuggestion"
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Download, Play, Pause, ArrowRight } from "lucide-react";
+import { Midi } from "@tonejs/midi";
+import * as Tone from "tone";
+import { toast } from "sonner";
+import posthog from "posthog-js";
+import WaifuSuggestion from "./WaifuSuggestion";
+import DownloadModal from "./DownloadModal";
+import { useUserWithSubscription } from "@/hooks/useUserWithSubscription";
 
 interface ConversionSectionProps {
   file: File,
@@ -19,10 +21,17 @@ interface ConversionSectionProps {
 }
 
 export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting }: ConversionSectionProps) {
-  const [error, setError] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const synth = useRef<Tone.Sampler | null>(null)
-  const midiPlayer = useRef<Tone.Part | null>(null)
+  // State and refs
+  const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [fileUuid, setFileUuid] = useState<string | null>(null);
+  const [oneTimePurchased, setOneTimePurchased] = useState(false);
+  const synth = useRef<Tone.Sampler | null>(null);
+  const midiPlayer = useRef<Tone.Part | null>(null);
+  const { user, loading } = useUserWithSubscription();
+  // Helper to determine if user can download
+  const canDownload = (!!user && user.subscription_status === 'active') || oneTimePurchased;
 
   useEffect(() => {
     // When the uploaded file changes remove the error.
@@ -77,45 +86,40 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     }
   }, [])
 
+  // Handles file conversion and sets all required state from backend JSON
   const fileConversion = async () => {
-
     posthog.capture('convertButtonClicked', { fileName: file.name });
-
-    setIsConverting(true)
-    setError(null)
-
-    const formData = new FormData()
-    formData.append("file", file)
-
+    setIsConverting(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append("file", file);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/upload`, {
         method: "POST",
         body: formData,
-      })
-
+      });
       // Handle error
       if (!response.ok) {
-
-        const reponseData = await response.json();
-        if (reponseData?.error) {
-          throw new Error(reponseData?.error);
+        const responseData = await response.json();
+        if (responseData?.error) {
+          throw new Error(responseData?.error);
         }
-
-        throw new Error("An error occurred during conversion. Please try again.")
+        throw new Error("An error occurred during conversion. Please try again.");
       }
-
-      // Handle success
-      const midiBlob = await response.blob()
-      const midiUrl = URL.createObjectURL(midiBlob)
-      setMidiUrl(midiUrl)
-
+      // Parse JSON response
+      const data = await response.json();
+      if (!data.midi_url || !data.file_uuid) {
+        throw new Error("Invalid response from server. Please try again.");
+      }
+      setMidiUrl(data.midi_url);
+      setFileUuid(data.file_uuid);
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || "An error occurred during conversion. Please try again.")
+        setError(err.message || "An error occurred during conversion. Please try again.");
       }
       throw err;
     } finally {
-      setIsConverting(false)
+      setIsConverting(false);
     }
   }
 
@@ -193,9 +197,68 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     setMidiUrl(null);
   }
 
+  // State for download modal
+  
+  // Import user and subscription status
+  
+  // Placeholder: state to track if the user just completed a one-time purchase for this MIDI
+  
+
+  // Helper to determine if user can download
+  
+
+  // Handler for download button
+  const handleDownloadClick = (e: React.MouseEvent) => {
+    if (!canDownload) {
+      e.preventDefault();
+      setShowDownloadModal(true);
+    } else {
+      posthog.capture('downloadClicked', { fileName: file.name });
+    }
+  };
+
+  // Handler for subscribe button in modal
+  const handleSubscribe = async () => {
+    setShowDownloadModal(false);
+    if (!user) {
+      // If not logged in, trigger Google login
+      window.location.href = '/'; // Or trigger login logic
+      return;
+    }
+    // Call backend to create Stripe subscription session
+    const res = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'subscription', user_id: user.id }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    }
+  };
+
+  // Handler for one-time purchase button in modal
+  const handleOneTime = async () => {
+    setShowDownloadModal(false);
+    if (!fileUuid) {
+      setError("Missing file UUID for payment. Please try converting again.");
+      return;
+    }
+    // Call backend to create Stripe one-time session
+    const res = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'onetime', file_uuid: fileUuid }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    }
+  };
+
+
   return (
     <>
-
       <div className="w-full mt-8 flex flex-col items-center">
         {!midiUrl && (
           <Button onClick={handleConversion} disabled={isConverting}>
@@ -226,11 +289,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                   className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
                 >
                   <a
-                    href={midiUrl}
+                    href={canDownload ? midiUrl : '#'}
                     download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}
-                    onClick={() => {
-                      posthog.capture('downloadClicked', { fileName: file.name });
-                    }}
+                    onClick={handleDownloadClick}
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download MIDI
@@ -268,11 +329,18 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         )}
       </div>
 
+      {/* Download Modal for payment options */}
+      <DownloadModal
+        open={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        onSubscribe={handleSubscribe}
+        onOneTime={handleOneTime}
+      />
+
       {error?.includes("Please, upload the image with higher quality.") && (
         <WaifuSuggestion />
       )}
-
     </>
-  )
+  );
 }
 

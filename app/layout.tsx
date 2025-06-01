@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { Toaster } from 'sonner';
 import { PostHogProvider } from "./providers";
 import Script from "next/script";
+import Header from '../components/Header';
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -48,12 +49,15 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={inter.className}>
+        {/* Global notification toaster */}
         <Toaster
           richColors
           position="top-center"
           theme="dark"
           closeButton
         />
+        {/* Main header with authentication and subscription controls */}
+        <Header />
         <PostHogProvider>
           {children}
         </PostHogProvider>
