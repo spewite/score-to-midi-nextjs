@@ -280,7 +280,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     const res = await fetch('/api/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'onetime', file_uuid: fileUuid }),
+      body: JSON.stringify({ type: 'onetime', file_uuid: fileUuid, user_id: user?.id }),
     });
     const data = await res.json();
     if (data.url) {
