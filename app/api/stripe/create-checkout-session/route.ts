@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
         console.log(profileError);
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
+      
       // Fetch latest subscription for Stripe customer ID
       const { data: subscription } = await supabaseAdmin
         .from('subscriptions')

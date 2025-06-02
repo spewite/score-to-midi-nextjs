@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl!, supabaseServiceRoleKey!);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -21,7 +17,7 @@ export async function GET(req: NextRequest) {
     if (type === 'onetime') {
       const payment_intent = session.payment_intent;
       console.log('[Session API] Looking up one_time_purchases for payment_intent:', payment_intent);
-      const { data: purchase, error } = await supabase
+      const { data: purchase, error } = await supabaseAdmin
         .from('one_time_purchases')
         .select('*')
         .eq('stripe_payment_id', payment_intent)
@@ -31,8 +27,6 @@ export async function GET(req: NextRequest) {
       }
       if (!purchase) {
         console.warn('[Session API] No purchase found for payment_intent:', payment_intent);
-      } else {
-        console.log('[Session API] Purchase found:', purchase);
       }
       return NextResponse.json({
         type: 'onetime',
@@ -42,12 +36,32 @@ export async function GET(req: NextRequest) {
         purchaseError: error,
       });
     } else if (type === 'subscription') {
-      // Puedes añadir lógica para verificar la suscripción si quieres
+
+      // Get the Stripe subscription ID from the session object
+      const stripe_subscription_id = session.subscription;
+
+      // Query Supabase for the subscription record
+      const { data: subscription, error } = await supabaseAdmin
+        .from('subscriptions')
+        .select('*')
+        .eq('stripe_subscription_id', stripe_subscription_id)
+        .single();
+
+      if (error) {
+        console.error('[Session API] Error fetching subscription:', error);
+      }
+      if (!subscription) {
+        console.warn('[Session API] No subscription found for stripe_subscription_id:', stripe_subscription_id);
+      }
+
       return NextResponse.json({
         type: 'subscription',
-        subscriptionConfirmed: true,
-        session,
+        subscriptionConfirmed: !!subscription && !error,
+        subscription,
+        stripe_subscription_id,
+        subscriptionError: error,
       });
+
     } else {
       return NextResponse.json({
         type: 'unknown',
