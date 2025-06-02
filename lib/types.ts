@@ -10,7 +10,7 @@ export interface Subscription {
   created_at: string; // ISO date string
 }
 
-export interface UserWithSubscription {
+export interface User {
   id: string;
   username: string;
   email: string;

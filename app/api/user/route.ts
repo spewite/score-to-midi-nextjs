@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import type { Subscription, UserWithSubscription } from '../../../lib/types';
+import type { Subscription, User } from '../../../lib/types';
 
 export async function GET(req: NextRequest) {
   // Crea el cliente Supabase para server components usando cookies
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Puedes agregar más campos si tu User los tiene (ej: username, created_at)
-    const userResponse: UserWithSubscription = {
+    const userResponse: User = {
       id: user.id,
       username: user.user_metadata?.username || '',
       email: user.email || '',

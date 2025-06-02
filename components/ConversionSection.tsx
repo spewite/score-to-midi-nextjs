@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import posthog from "posthog-js";
 import WaifuSuggestion from "./WaifuSuggestion";
 import DownloadModal from "./DownloadModal";
-import { UserWithSubscription } from "../lib/types"
+import { User } from "../lib/types"
 interface ConversionSectionProps {
   file: File,
   setFile: (file: File | null) => void;
@@ -17,7 +17,7 @@ interface ConversionSectionProps {
   setMidiUrl: (midiUrl: string | null) => void,
   isConverting: boolean,
   setIsConverting: (isConverting: boolean) => void;
-  user: UserWithSubscription | null;
+  user: User | null;
 }
 
 export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting , user }: ConversionSectionProps) {

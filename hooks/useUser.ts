@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { UserWithSubscription } from '../lib/types';
+import { User } from '../lib/types';
 
-export function useUserWithSubscription() {
-  const [user, setUser] = useState<UserWithSubscription | null>(null);
+export function useUser() {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ export function useUserWithSubscription() {
         if (mounted) {
           setUser(null);
           setLoading(false);
-          setError(null); // No hay error, simplemente no hay usuario logueado
+          setError(null); // No error, user is simply not logged in
         }
         return;
       }
@@ -33,6 +33,7 @@ export function useUserWithSubscription() {
         }
         return;
       }
+      
       // 1. Read user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -79,14 +80,17 @@ export function useUserWithSubscription() {
         setLoading(false);
       }
     }
+
     fetchUser();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, _session) => {
       fetchUser();
     });
+    
     return () => {
       mounted = false;
       listener?.subscription.unsubscribe();
     };
+    
   }, []);
 
   return { user, loading, error };
