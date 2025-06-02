@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { PostHogProvider } from './providers';
 import Script from 'next/script';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -66,6 +67,7 @@ export default function RootLayout({
         <PostHogProvider>
           {children}
         </PostHogProvider>
+        <Footer />
       </body>
     </html>
   );

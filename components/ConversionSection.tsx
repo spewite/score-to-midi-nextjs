@@ -120,6 +120,8 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
       setMidiUrl(data.midi_url);
       setFileUuid(data.file_uuid);
 
+      console.log(data);
+
       // Insertar registro en Supabase vía Next.js
       try {
         await fetch('/api/midi/insert', {
@@ -127,6 +129,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: data.file_uuid,
+            score_url: data.score_url,
             midi_url: data.midi_url,
             user_id: user?.id || null,
             filename: file.name,

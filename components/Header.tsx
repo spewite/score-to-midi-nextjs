@@ -156,9 +156,9 @@ export const Header: React.FC = () => {
                   <div className="absolute right-0 mt-2 w-44 bg-zinc-900 border border-zinc-700 rounded shadow-lg opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity z-20">
                     <button
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800 text-white"
-                      onClick={() => alert('Profile functionality coming soon')}
+                      onClick={() => window.location.href = '/my-scores'}
                     >
-                      My profile
+                      My Scores
                     </button>
                     <button
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800 text-red-300"
