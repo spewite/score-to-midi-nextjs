@@ -33,6 +33,11 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
   // Download permission state
   const [canDownload, setCanDownload] = useState((!!user && user.subscription?.status === 'active') || oneTimePurchased);
+  useEffect(() => {
+    if (canDownload) {
+      toast.success('You can now download the MIDI file');
+    }
+  }, [canDownload]);
 
   useEffect(() => {
     // When the uploaded file changes remove the error.
@@ -124,6 +129,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
             id: data.file_uuid,
             midi_url: data.midi_url,
             user_id: user?.id || null,
+            filename: file.name,
           }),
         });
       } catch {
@@ -211,16 +217,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     setMidiUrl(null);
   };
 
-  // State for download modal
-  
-  // Import user and subscription status
-  
-  // Placeholder: state to track if the user just completed a one-time purchase for this MIDI
-  
-
-  // Helper to determine if user can download
-  
-
   // Handler for download button
   const handleDownloadClick = (e: React.MouseEvent) => {
     if (!canDownload) {
@@ -241,14 +237,13 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     const res = await fetch('/api/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'subscription', user_id: user.id }),
+      body: JSON.stringify({ type: 'subscription', user_id: user.id, file_uuid: fileUuid }),
     });
     const data = await res.json();
     if (data.url) {
-      window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
-      // Show toast while waiting
+      posthog.capture('subscribeClicked', { fileName: file.name });
       toast('Waiting for payment confirmation...', { duration: 4000 });
-      // Poll for subscription status
+      window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
       pollForSubscription();
     }
   };
@@ -256,15 +251,31 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   // Polls the backend for subscription status
   const pollForSubscription = () => {
     const interval = setInterval(async () => {
-      // You may want to use your own API endpoint or Supabase client here
-      // For this example, we assume useUserWithSubscription updates automatically, so we refetch user
-      const res = await fetch('/api/user'); // Replace with your actual endpoint if different
+      const res = await fetch('/api/user');
       const data = await res.json();
+      console.log('pollForSubscription', data);
       if (data.subscription?.status === 'active') {
         clearInterval(interval);
         toast.success('Subscription successful!');
-        // Optionally update UI state here to enable download
-        setCanDownload(true); // You may need to define this state if not present
+        setCanDownload(true);
+      }
+    }, 3000); // Poll every 3 seconds
+  };
+
+  // Polls the backend for a one-time purchase
+  const pollForOneTimePurchase = () => {
+    const interval = setInterval(async () => {
+      const res = await fetch('/api/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_uuid: fileUuid }),
+      });
+      const data = await res.json();
+      console.log('pollForOneTimePurchase', data);
+      if (data.success) {
+        clearInterval(interval);
+        toast.success('One-time purchase successful!');
+        setCanDownload(true);
       }
     }, 3000); // Poll every 3 seconds
   };
@@ -284,10 +295,12 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     });
     const data = await res.json();
     if (data.url) {
-      window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
+      toast('Waiting for payment confirmation...', { duration: 4000 });
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+      posthog.capture('oneTimePurchaseClicked', { fileName: file.name });
+      pollForOneTimePurchase();
     }
   };
-
 
   return (
     <>

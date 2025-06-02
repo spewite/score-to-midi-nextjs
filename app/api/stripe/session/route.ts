@@ -12,7 +12,23 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
-    // console.log('[Session API] Full Stripe session:', JSON.stringify(session, null, 2));
+
+    // Get the file UUID the session metadata
+    const file_uuid = session.metadata?.file_uuid;
+
+    // Get the filename and download URL from the database
+    const { data: file, error: fileError } = await supabaseAdmin
+      .from('midi_files')
+      .select('file_name, midi_url')
+      .eq('id', file_uuid)
+      .single();
+    if (fileError) {
+      console.error('[Session API] Error fetching file:', fileError);
+    }
+    if (!file) {
+      console.warn('[Session API] No file found for file_uuid:', file_uuid);
+    }
+
     const type = session.metadata?.type;
     if (type === 'onetime') {
       const payment_intent = session.payment_intent;
@@ -34,6 +50,8 @@ export async function GET(req: NextRequest) {
         purchase,
         payment_intent,
         purchaseError: error,
+        filename: file?.file_name,
+        midi_url: file?.midi_url,
       });
     } else if (type === 'subscription') {
 
@@ -60,6 +78,8 @@ export async function GET(req: NextRequest) {
         subscription,
         stripe_subscription_id,
         subscriptionError: error,
+        filename: file?.file_name,
+        midi_url: file?.midi_url,
       });
 
     } else {

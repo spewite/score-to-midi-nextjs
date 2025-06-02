@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
         success_url: `${APP_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${APP_URL}/payment/cancel`,
         metadata: {
+          file_uuid,
           user_id: profile.id,
           type: 'subscription',
         },
