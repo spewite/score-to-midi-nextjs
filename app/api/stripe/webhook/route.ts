@@ -36,11 +36,10 @@ export async function POST(req: NextRequest) {
           .eq('id', user_id);
         console.log('[Webhook] Subscription updated for user:', user_id);
       } else if (type === 'onetime') {
-        console.log("metadata")
-        console.log(metadata)
+        console.log('metadata');
+        console.log(metadata);
         const user_id = metadata.user_id;
         const file_uuid = metadata.file_uuid;
-        const session_id = session.id;
         const stripe_payment_id = session.payment_intent || null;
 
         // Look up midi_file_id from file_uuid

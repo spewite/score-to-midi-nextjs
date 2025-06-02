@@ -1,4 +1,12 @@
 module.exports = {
+  overrides: [
+    {
+      files: ['*.ts', '*.tsx'],
+      rules: {
+        'react/prop-types': 'off',
+      },
+    },
+  ],
   root: true,
   extends: [
     'next/core-web-vitals',
@@ -12,6 +20,7 @@ module.exports = {
   ],
   ignorePatterns: ['dist', '.next'],
   rules: {
+    'react/react-in-jsx-scope': 'off',
     'react-hooks/exhaustive-deps': ['error', { enableDangerousAutofixThisMayCauseInfiniteLoops: true }],
     'react-refresh/only-export-components': [
       'warn',
@@ -30,7 +39,8 @@ module.exports = {
       argsIgnorePattern: '^_'
     }],
     'function-paren-newline': ['error', 'never'],
-    'unused-imports/no-unused-imports': 'error'
+    'unused-imports/no-unused-imports': 'error',
+    '@typescript-eslint/no-explicit-any': 'off'
   },
   settings: {
     react: {

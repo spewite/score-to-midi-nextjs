@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import { useState, useCallback, useEffect } from "react"
-import { useDropzone } from "react-dropzone"
-import { Upload, X } from "lucide-react"
-import Image from "next/image"
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Upload, X } from 'lucide-react';
+import Image from 'next/image';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { AllowedExtensions } from "./AllowedExtensions"
-import { toast } from "sonner"
-import posthog from "posthog-js"
+import { AllowedExtensions } from './AllowedExtensions';
+import { toast } from 'sonner';
+import posthog from 'posthog-js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
@@ -19,114 +19,112 @@ interface FileUploadProps {
 
 export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
 
-  const [preview, setPreview] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isHovering, setIsHovering] = useState(false)
+  const [preview, setPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
-  const allowedImageExtensions = [".svg", ".png", ".jpg", ".jpeg", ".bmp"];
-  const allowedExtensions: string[] = [".pdf", ...allowedImageExtensions];
+  const allowedImageExtensions = useMemo(() => ['.svg', '.png', '.jpg', '.jpeg', '.bmp'], []);
+  const allowedExtensions: string[] = useMemo(() => ['.pdf', ...allowedImageExtensions], [allowedImageExtensions]);
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
 
-      if (isConverting) return;
+    if (isConverting) return;
 
-      const uploadedFile = acceptedFiles[0]
+    const uploadedFile = acceptedFiles[0];
 
-      const extension = uploadedFile.name.substring(uploadedFile.name.lastIndexOf(".")).toLowerCase()
+    const extension = uploadedFile.name.substring(uploadedFile.name.lastIndexOf('.')).toLowerCase();
 
-      if (!allowedExtensions.includes(extension)) {
-        toast.error("Uploaded file extension is not supported!")
-        return;
-      }
+    if (!allowedExtensions.includes(extension)) {
+      toast.error('Uploaded file extension is not supported!');
+      return;
+    }
 
-      setFile(uploadedFile)
+    setFile(uploadedFile);
 
-      posthog.capture('fileAttached', { fileName: uploadedFile.name });
+    posthog.capture('fileAttached', { fileName: uploadedFile.name });
 
-      // Check if the file is a PDF
-      if (uploadedFile.type === "application/pdf" || extension === ".pdf") {
-        // Use FileReader to load the file as an ArrayBuffer
-        const fileReader = new FileReader()
-        fileReader.onload = async (e) => {
-          try {
-            const typedarray = new Uint8Array(e.target?.result as ArrayBuffer)
-            // Load the PDF document
-            const pdf = await pdfjsLib.getDocument(typedarray).promise
-            // Get the first page
-            const page = await pdf.getPage(1)
-            const viewport = page.getViewport({ scale: 1 })
+    // Check if the file is a PDF
+    if (uploadedFile.type === 'application/pdf' || extension === '.pdf') {
+      // Use FileReader to load the file as an ArrayBuffer
+      const fileReader = new FileReader();
+      fileReader.onload = async (e) => {
+        try {
+          const typedarray = new Uint8Array(e.target?.result as ArrayBuffer);
+          // Load the PDF document
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          // Get the first page
+          const page = await pdf.getPage(1);
+          const viewport = page.getViewport({ scale: 1 });
 
-            // Create a canvas element to render the PDF page
-            const canvas = document.createElement("canvas")
-            const context = canvas.getContext("2d")
-            if (!context) return
+          // Create a canvas element to render the PDF page
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) return;
 
-            canvas.width = viewport.width
-            canvas.height = viewport.height
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
 
-            // Render the PDF page into the canvas context
-            await page.render({ canvasContext: context, viewport }).promise
+          // Render the PDF page into the canvas context
+          await page.render({ canvasContext: context, viewport }).promise;
 
-            // Convert the canvas to a data URL
-            const imageDataUrl = canvas.toDataURL("image/png")
-            setPreview(imageDataUrl)
-          } catch (error) {
-            console.error("Error processing PDF:", error)
-          }
+          // Convert the canvas to a data URL
+          const imageDataUrl = canvas.toDataURL('image/png');
+          setPreview(imageDataUrl);
+        } catch (error) {
+          console.error('Error processing PDF:', error);
         }
-        fileReader.readAsArrayBuffer(uploadedFile)
-      } else {
-        // For image files, create an object URL as before
-        setPreview(URL.createObjectURL(uploadedFile))
-      }
-    },
-    [setFile, isConverting],
-  )
+      };
+      fileReader.readAsArrayBuffer(uploadedFile);
+    } else {
+      // For image files, create an object URL as before
+      setPreview(URL.createObjectURL(uploadedFile));
+    }
+  },
+  [isConverting, allowedExtensions, setFile],);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": allowedImageExtensions,
-      "application/pdf": [".pdf"],
+      'image/*': allowedImageExtensions,
+      'application/pdf': ['.pdf'],
     },
     maxFiles: 1,
-  })
+  });
 
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
       if (isConverting) return;
-      e.preventDefault()
-      setIsDragging(true)
-    }
+      e.preventDefault();
+      setIsDragging(true);
+    };
 
     const handleDragLeave = () => {
       if (isConverting) return;
-      setIsDragging(false)
-    }
+      setIsDragging(false);
+    };
 
     const handleDrop = (e: DragEvent) => {
       if (isConverting) return;
-      e.preventDefault()
-      setIsDragging(false)
+      e.preventDefault();
+      setIsDragging(false);
       if (e.dataTransfer?.files) {
-        onDrop(Array.from(e.dataTransfer.files))
+        onDrop(Array.from(e.dataTransfer.files));
       }
-    }
+    };
 
-    window.addEventListener("dragover", handleDragOver)
-    window.addEventListener("dragleave", handleDragLeave)
-    window.addEventListener("drop", handleDrop)
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('drop', handleDrop);
 
     return () => {
-      window.removeEventListener("dragover", handleDragOver)
-      window.removeEventListener("dragleave", handleDragLeave)
-      window.removeEventListener("drop", handleDrop)
-    }
-  }, [onDrop, isConverting])
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [onDrop, isConverting]);
 
   useEffect(() => {
-    const droparea = document.getElementById("droparea");
+    const droparea = document.getElementById('droparea');
     
     const handleMouseEnter = () => {
       if (!isConverting) {
@@ -138,29 +136,29 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
       setIsHovering(false);
     };
     
-    droparea?.addEventListener("mouseenter", handleMouseEnter);
-    droparea?.addEventListener("mouseleave", handleMouseLeave);
+    droparea?.addEventListener('mouseenter', handleMouseEnter);
+    droparea?.addEventListener('mouseleave', handleMouseLeave);
     
     return () => {
-      droparea?.removeEventListener("mouseenter", handleMouseEnter);
-      droparea?.removeEventListener("mouseleave", handleMouseLeave);
+      droparea?.removeEventListener('mouseenter', handleMouseEnter);
+      droparea?.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [isConverting]);
 
   const removeFile = () => {
-    setFile(null)
-    setPreview(null)
-  }
+    setFile(null);
+    setPreview(null);
+  };
 
   return (
     <div
       {...getRootProps()}
       id="droparea"
       className={`w-full border-2 border-dashed rounded-lg p-8 text-center animate-fadeIn transition-all 
-        ${isConverting ? "cursor-wait" : "cursor-pointer"}
+        ${isConverting ? 'cursor-wait' : 'cursor-pointer'}
         ${(isDragActive && !isConverting) || isDragging || isHovering
-          ? "border-primary bg-primary/10"
-          : "border-muted-foreground"}
+      ? 'border-primary bg-primary/10'
+      : 'border-muted-foreground'}
         `
       }
     >
@@ -173,7 +171,7 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
             </div>
             <div className="flex items-center justify-center">
               <Image
-                src={preview || "/placeholder.svg"}
+                src={preview || '/placeholder.svg'}
                 alt="File preview"
                 width={300}
                 height={300}
@@ -186,8 +184,8 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
                 <p className="text-lg font-medium mb-2">{file?.name}</p>
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    removeFile()
+                    e.stopPropagation();
+                    removeFile();
                   }}
                   className="text-sm text-red-500 hover:text-red-700 flex items-center"
                 >
@@ -205,8 +203,8 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
             <Upload className="w-12 h-12 text-primary mb-4" />
             <p className="text-lg font-medium">
               {isDragActive || isDragging
-                ? "Drop the file here"
-                : "Drag & drop your score image here"}
+                ? 'Drop the file here'
+                : 'Drag & drop your score image here'}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               or click to select a file
@@ -216,5 +214,5 @@ export function FileUpload({ isConverting, file, setFile }: FileUploadProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

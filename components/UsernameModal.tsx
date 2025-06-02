@@ -1,26 +1,25 @@
-"use client";
-import * as React from "react";
+'use client';
+import * as React from 'react';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
   DialogDescription 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface UsernameModalProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
   onSave: (username: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   message?: string;
 }
 
-export const UsernameModal: React.FC<UsernameModalProps> = ({ open, onOpenChange, onSave, loading, error, message }) => {
-  const [username, setUsername] = React.useState("");
+export const UsernameModal: React.FC<UsernameModalProps> = ({ open, onSave, loading, error, message }) => {
+  const [username, setUsername] = React.useState('');
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +29,17 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ open, onOpenChange
   };
 
   React.useEffect(() => {
-    if (!open) setUsername("");
+    if (!open) setUsername('');
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="bg-[#18181b] border-zinc-800 text-white" forceMount onInteractOutside={e => e.preventDefault()}>
+    <Dialog
+      open={open}
+      onOpenChange={() => {}}>
+      <DialogContent
+        className="bg-[#18181b] border-zinc-800 text-white"
+        forceMount
+        onInteractOutside={e => e.preventDefault()}>
         <DialogHeader className="[&>button[data-radix-dialog-close]]:hidden">
           <DialogTitle className="text-2xl font-bold">Choose your username</DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -47,7 +51,9 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ open, onOpenChange
             {message}
           </div>
         )}
-        <form className="flex flex-col gap-4 mt-4" onSubmit={handleSave}>
+        <form
+          className="flex flex-col gap-4 mt-4"
+          onSubmit={handleSave}>
           <Input
             value={username}
             onChange={e => setUsername(e.target.value)}
@@ -62,8 +68,11 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ open, onOpenChange
               {error}
             </div>
           )}
-          <Button type="submit" disabled={loading || !username.trim()} className="w-full bg-blue-600 text-white hover:bg-blue-700">
-            {loading ? "Saving..." : "Save"}
+          <Button
+            type="submit"
+            disabled={loading || !username.trim()}
+            className="w-full bg-blue-600 text-white hover:bg-blue-700">
+            {loading ? 'Saving...' : 'Save'}
           </Button>
         </form>
       </DialogContent>

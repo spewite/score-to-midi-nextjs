@@ -174,9 +174,6 @@ export const Header: React.FC = () => {
             // If the user is authenticated but has no profile, force the username modal
             <UsernameModal
               open={true}
-              onOpenChange={(open) => {
-                if (!open) handleLogout(); // If the user closes the modal, log out
-              }}
               onSave={handleSaveUsername}
               loading={usernameLoading}
               error={usernameError}

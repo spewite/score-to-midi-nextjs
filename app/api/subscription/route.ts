@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-05-28.basil" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-05-28.basil' });
 
 export async function POST(req: NextRequest) {
   try {
     const { session_id } = await req.json();
     if (!session_id) {
-      return NextResponse.json({ success: false, error: "Missing session_id" }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing session_id' }, { status: 400 });
     }
 
     // Fetch session from Stripe
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ["subscription", "customer"],
+      expand: ['subscription', 'customer'],
     });
 
     const stripeCustomerId = session.customer as string;
@@ -22,30 +22,30 @@ export async function POST(req: NextRequest) {
     const userId = session.metadata?.user_id;
 
     // DEBUG: Log the user_id from metadata
-    console.log("[DEBUG] userId from Stripe session metadata:", userId);
+    console.log('[DEBUG] userId from Stripe session metadata:', userId);
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: "User ID not found in Stripe metadata" }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'User ID not found in Stripe metadata' }, { status: 400 });
     }
 
     // Confirm the user exists in profiles
     const { data: user, error: userError } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("id", userId)
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
       .single();
 
     if (userError || !user) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
     // 1. Check for any existing active subscription for this user (regardless of stripe_subscription_id)
     const { data: activeSub, error: activeSubError } = await supabaseAdmin
-      .from("subscriptions")
-      .select("id, status, stripe_subscription_id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
+      .from('subscriptions')
+      .select('id, status, stripe_subscription_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -55,22 +55,22 @@ export async function POST(req: NextRequest) {
 
     // 2. If an active subscription exists for this user with a different Stripe subscription, prevent duplicate
     if (activeSub && activeSub.stripe_subscription_id !== stripeSubscriptionId) {
-      return NextResponse.json({ success: false, error: "You already have an active subscription." }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'You already have an active subscription.' }, { status: 400 });
     }
 
     // 3. Upsert subscription (insert or update if user_id+stripe_subscription_id already exists)
     const { error: subError } = await supabaseAdmin
-      .from("subscriptions")
+      .from('subscriptions')
       .upsert({
         user_id: user.id,
         stripe_customer_id: stripeCustomerId,
         stripe_subscription_id: stripeSubscriptionId,
-        status: status === "active" ? "active" : "inactive",
+        status: status === 'active' ? 'active' : 'inactive',
         current_period_end: (session.subscription as any)?.current_period_end
           ? new Date((session.subscription as any).current_period_end * 1000).toISOString()
           : null,
         created_at: new Date().toISOString(),
-      }, { onConflict: "user_id,stripe_subscription_id" });
+      }, { onConflict: 'user_id,stripe_subscription_id' });
 
     if (subError) {
       return NextResponse.json({ success: false, error: subError.message }, { status: 500 });

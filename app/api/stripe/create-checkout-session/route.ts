@@ -13,10 +13,10 @@ export async function POST(req: NextRequest) {
 
     // Fetch user profile from 'profiles' table
     const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('id, email')
-    .eq('id', user_id)
-    .single();
+      .from('profiles')
+      .select('id, email')
+      .eq('id', user_id)
+      .single();
 
     if (type === 'subscription') {
       if (!user_id) {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       }
       
       if (profileError || !profile) {
-        console.log(profileError)
+        console.log(profileError);
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       // Fetch latest subscription for Stripe customer ID

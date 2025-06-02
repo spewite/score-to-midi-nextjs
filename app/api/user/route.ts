@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import type { Subscription, User } from '../../../lib/types';
+import type { User } from '../../../lib/types';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   // Crea el cliente Supabase para server components usando cookies
   try {
     const supabase = createServerComponentClient({ cookies });

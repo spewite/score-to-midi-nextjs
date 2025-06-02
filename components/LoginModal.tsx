@@ -1,8 +1,8 @@
-"use client";
-import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { FcGoogle } from "react-icons/fc";
+'use client';
+import * as React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { FcGoogle } from 'react-icons/fc';
 
 interface LoginModalProps {
   open: boolean;
@@ -13,7 +13,9 @@ interface LoginModalProps {
 
 export const LoginModal: React.FC<LoginModalProps> = ({ open, onOpenChange, onGoogle, error }) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#18181b] border-zinc-800 text-white">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Access</DialogTitle>

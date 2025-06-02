@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Loader2, Download, Play, Pause, ArrowRight } from "lucide-react";
-import { Midi } from "@tonejs/midi";
-import * as Tone from "tone";
-import { toast } from "sonner";
-import posthog from "posthog-js";
-import WaifuSuggestion from "./WaifuSuggestion";
-import DownloadModal from "./DownloadModal";
-import { User } from "../lib/types"
+import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Download, Play, Pause, ArrowRight } from 'lucide-react';
+import { Midi } from '@tonejs/midi';
+import * as Tone from 'tone';
+import { toast } from 'sonner';
+import posthog from 'posthog-js';
+import WaifuSuggestion from './WaifuSuggestion';
+import DownloadModal from './DownloadModal';
+import { User } from '../lib/types';
 interface ConversionSectionProps {
   file: File,
   setFile: (file: File | null) => void;
@@ -27,7 +27,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [fileUuid, setFileUuid] = useState<string | null>(null);
-  const [oneTimePurchased, setOneTimePurchased] = useState(false);
+  const [oneTimePurchased] = useState(false);
   const synth = useRef<Tone.Sampler | null>(null);
   const midiPlayer = useRef<Tone.Part | null>(null);
 
@@ -42,50 +42,50 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   useEffect(() => {
     synth.current = new Tone.Sampler({
       urls: {
-        A0: "A0.mp3",
-        C1: "C1.mp3",
-        "D#1": "Ds1.mp3",
-        "F#1": "Fs1.mp3",
-        A1: "A1.mp3",
-        C2: "C2.mp3",
-        "D#2": "Ds2.mp3",
-        "F#2": "Fs2.mp3",
-        A2: "A2.mp3",
-        C3: "C3.mp3",
-        "D#3": "Ds3.mp3",
-        "F#3": "Fs3.mp3",
-        A3: "A3.mp3",
-        C4: "C4.mp3",
-        "D#4": "Ds4.mp3",
-        "F#4": "Fs4.mp3",
-        A4: "A4.mp3",
-        C5: "C5.mp3",
-        "D#5": "Ds5.mp3",
-        "F#5": "Fs5.mp3",
-        A5: "A5.mp3",
-        C6: "C6.mp3",
-        "D#6": "Ds6.mp3",
-        "F#6": "Fs6.mp3",
-        A6: "A6.mp3",
-        C7: "C7.mp3",
-        "D#7": "Ds7.mp3",
-        "F#7": "Fs7.mp3",
-        A7: "A7.mp3",
-        C8: "C8.mp3",
+        A0: 'A0.mp3',
+        C1: 'C1.mp3',
+        'D#1': 'Ds1.mp3',
+        'F#1': 'Fs1.mp3',
+        A1: 'A1.mp3',
+        C2: 'C2.mp3',
+        'D#2': 'Ds2.mp3',
+        'F#2': 'Fs2.mp3',
+        A2: 'A2.mp3',
+        C3: 'C3.mp3',
+        'D#3': 'Ds3.mp3',
+        'F#3': 'Fs3.mp3',
+        A3: 'A3.mp3',
+        C4: 'C4.mp3',
+        'D#4': 'Ds4.mp3',
+        'F#4': 'Fs4.mp3',
+        A4: 'A4.mp3',
+        C5: 'C5.mp3',
+        'D#5': 'Ds5.mp3',
+        'F#5': 'Fs5.mp3',
+        A5: 'A5.mp3',
+        C6: 'C6.mp3',
+        'D#6': 'Ds6.mp3',
+        'F#6': 'Fs6.mp3',
+        A6: 'A6.mp3',
+        C7: 'C7.mp3',
+        'D#7': 'Ds7.mp3',
+        'F#7': 'Fs7.mp3',
+        A7: 'A7.mp3',
+        C8: 'C8.mp3',
       },
       release: 1,
-      baseUrl: "https://tonejs.github.io/audio/salamander/",
-    }).toDestination()
+      baseUrl: 'https://tonejs.github.io/audio/salamander/',
+    }).toDestination();
 
     return () => {
       if (synth.current) {
-        synth.current.dispose()
+        synth.current.dispose();
       }
       if (midiPlayer.current) {
-        midiPlayer.current.dispose()
+        midiPlayer.current.dispose();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   // Handles file conversion and sets all required state from backend JSON
   const fileConversion = async () => {
@@ -93,10 +93,10 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     setIsConverting(true);
     setError(null);
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/upload`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
       });
       // Handle error
@@ -105,12 +105,12 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         if (responseData?.error) {
           throw new Error(responseData?.error);
         }
-        throw new Error("An error occurred during conversion. Please try again.");
+        throw new Error('An error occurred during conversion. Please try again.');
       }
       // Parse JSON response
       const data = await response.json();
       if (!data.midi_url || !data.file_uuid) {
-        throw new Error("Invalid response from server. Please try again.");
+        throw new Error('Invalid response from server. Please try again.');
       }
       setMidiUrl(data.midi_url);
       setFileUuid(data.file_uuid);
@@ -126,27 +126,27 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
             user_id: user?.id || null,
           }),
         });
-      } catch (insertErr) {
+      } catch {
         // Si falla el insert, mostrar error pero no bloquear el flujo principal
         setError('Error saving MIDI metadata. The MIDI was generated, but could not be saved.');
       }
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || "An error occurred during conversion. Please try again.");
+        setError(err.message || 'An error occurred during conversion. Please try again.');
       }
       throw err;
     } finally {
       setIsConverting(false);
     }
-  }
+  };
 
   const handleConversion = () => {
     toast.promise(fileConversion(), {
-      loading: "The conversion may take up to 2 minute 🙌",
-      success: "The score has been converted successfully! 😎",
-      error: "An error occurred during conversion 😬."
-    })
-  }
+      loading: 'The conversion may take up to 2 minute 🙌',
+      success: 'The score has been converted successfully! 😎',
+      error: 'An error occurred during conversion 😬.'
+    });
+  };
 
   const playMidi = async () => {
 
@@ -168,17 +168,14 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         note: note.name,
         duration: note.duration,
         velocity: note.velocity,
-      }))
-    );
+      })));
 
     // Create a new Tone.Part and start it at time 0 of the transport timeline
     midiPlayer.current = new Tone.Part((time, event) => {
-      synth.current?.triggerAttackRelease(
-        event.note,
+      synth.current?.triggerAttackRelease(event.note,
         event.duration,
         time,
-        event.velocity
-      );
+        event.velocity);
     }, midiEvents).start(0);
 
     Tone.Transport.start();
@@ -203,7 +200,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
     synth.current?.releaseAll();
     setIsPlaying(false);
-  }
+  };
 
   const handleConvertNext = () => {
     posthog.capture('convertNextClicked', { fileName: file.name });
@@ -212,7 +209,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     setMidiUrl(null);
     setFile(null);
     setMidiUrl(null);
-  }
+  };
 
   // State for download modal
   
@@ -276,7 +273,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const handleOneTime = async () => {
     setShowDownloadModal(false);
     if (!fileUuid) {
-      setError("Missing file UUID for payment. Please try converting again.");
+      setError('Missing file UUID for payment. Please try converting again.');
       return;
     }
     // Call backend to create Stripe one-time session
@@ -296,14 +293,16 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     <>
       <div className="w-full mt-8 flex flex-col items-center">
         {!midiUrl && (
-          <Button onClick={handleConversion} disabled={isConverting}>
+          <Button
+            onClick={handleConversion}
+            disabled={isConverting}>
             {isConverting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Converting...
               </>
             ) : (
-              "Convert to MIDI"
+              'Convert to MIDI'
             )}
           </Button>
         )}
@@ -325,7 +324,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                 >
                   <a
                     href={canDownload ? midiUrl : '#'}
-                    download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}
+                    download={file.name.split('.')[0] + '.midi' || 'converted_score.midi'}
                     onClick={handleDownloadClick}
                   >
                     <Download className="mr-2 h-4 w-4" />
@@ -334,7 +333,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                 </Button>
                 <Button
                   onClick={isPlaying ? stopMidi : playMidi}
-                  className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-green-600 to-green-900 hover:from-green-700 hover:to-green-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
+                  className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? 'from-green-600 to-green-900 hover:from-green-700 hover:to-green-800' : 'from-red-700 to-red-900 hover:from-red-800 hover:to-red-900'} text-white transition-all ease-in-out duration-200`}
                 >
                   {isPlaying ? (
                     <>
@@ -352,7 +351,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
               <div className="w-full flex justify-center">
                 <Button
                   className="w-full sm:w-auto bg-gradient-to-r transition ease-in-out duration-200"
-                  variant={"outline"}
+                  variant={'outline'}
                   onClick={handleConvertNext}
                 >
                   <ArrowRight className="h-4 w-4" />
@@ -372,7 +371,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         onOneTime={handleOneTime}
       />
 
-      {error?.includes("Please, upload the image with higher quality.") && (
+      {error?.includes('Please, upload the image with higher quality.') && (
         <WaifuSuggestion />
       )}
     </>

@@ -1,19 +1,19 @@
-"use client"
+'use client';
 
-import { FileUpload } from "@/components/FileUpload"
-import { useEffect, useState } from "react"
-import { ConversionSection } from "@/components/ConversionSection"
-import { useUser } from "@/hooks/useUser";
+import { FileUpload } from '@/components/FileUpload';
+import { useEffect, useState } from 'react';
+import { ConversionSection } from '@/components/ConversionSection';
+import { useUser } from '@/hooks/useUser';
 
 export default function Home() {
-  const [midiUrl, setMidiUrl] = useState<string | null>(null)
-  const [isConverting, setIsConverting] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
+  const [midiUrl, setMidiUrl] = useState<string | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const { user, loading } = useUser();
 
   useEffect(() => {
     console.log('User:', user, 'Loading:', loading);
-  }, [user]);
+  }, [loading, user]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -51,6 +51,6 @@ export default function Home() {
         © 2025 score-to-midi. All rights reserved.
       </footer>
     </div>
-  )
+  );
 }
 
