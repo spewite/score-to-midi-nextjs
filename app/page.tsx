@@ -1,15 +1,19 @@
 "use client"
 
 import { FileUpload } from "@/components/FileUpload"
-import { Music } from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ConversionSection } from "@/components/ConversionSection"
+import { useUserWithSubscription } from "@/hooks/useUserWithSubscription";
 
 export default function Home() {
   const [midiUrl, setMidiUrl] = useState<string | null>(null)
   const [isConverting, setIsConverting] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const { user, loading } = useUserWithSubscription();
+
+  useEffect(() => {
+    console.log('User:', user, 'Loading:', loading);
+  }, [user]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -38,6 +42,7 @@ export default function Home() {
               setFile={setFile}
               isConverting={isConverting}
               setIsConverting={setIsConverting}
+              user={user}
             />)}
 
         </section>

@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import posthog from "posthog-js";
 import WaifuSuggestion from "./WaifuSuggestion";
 import DownloadModal from "./DownloadModal";
-import { useUserWithSubscription } from "@/hooks/useUserWithSubscription";
-
+import { UserWithSubscription } from "../lib/types"
 interface ConversionSectionProps {
   file: File,
   setFile: (file: File | null) => void;
@@ -18,9 +17,10 @@ interface ConversionSectionProps {
   setMidiUrl: (midiUrl: string | null) => void,
   isConverting: boolean,
   setIsConverting: (isConverting: boolean) => void;
+  user: UserWithSubscription | null;
 }
 
-export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting }: ConversionSectionProps) {
+export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting , user }: ConversionSectionProps) {
  
   // State and refs
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +30,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const [oneTimePurchased, setOneTimePurchased] = useState(false);
   const synth = useRef<Tone.Sampler | null>(null);
   const midiPlayer = useRef<Tone.Part | null>(null);
-  const { user, loading } = useUserWithSubscription();
-  
-   // Download permission state
-   const [canDownload, setCanDownload] = useState((!!user && user.subscription?.status === 'active') || oneTimePurchased);
+
+  // Download permission state
+  const [canDownload, setCanDownload] = useState((!!user && user.subscription?.status === 'active') || oneTimePurchased);
 
   useEffect(() => {
     // When the uploaded file changes remove the error.
@@ -115,6 +114,22 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
       }
       setMidiUrl(data.midi_url);
       setFileUuid(data.file_uuid);
+
+      // Insertar registro en Supabase vía Next.js
+      try {
+        await fetch('/api/midi/insert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: data.file_uuid,
+            midi_url: data.midi_url,
+            user_id: user?.id || null,
+          }),
+        });
+      } catch (insertErr) {
+        // Si falla el insert, mostrar error pero no bloquear el flujo principal
+        setError('Error saving MIDI metadata. The MIDI was generated, but could not be saved.');
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || "An error occurred during conversion. Please try again.");
@@ -233,7 +248,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     });
     const data = await res.json();
     if (data.url) {
-      window.open(data.url, '_blank'); // Open Stripe in new tab
+      window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
       // Show toast while waiting
       toast('Waiting for payment confirmation...', { duration: 4000 });
       // Poll for subscription status
@@ -272,7 +287,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     });
     const data = await res.json();
     if (data.url) {
-      window.location.href = data.url;
+      window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
     }
   };
 

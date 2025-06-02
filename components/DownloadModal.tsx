@@ -55,7 +55,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ open, onClose, onSubscrib
         </div>
       </div>
     </div>,
-    typeof window !== 'undefined' ? document.body : (typeof global !== 'undefined' ? global.document.body : null)
+    document.body
   );
 };
 

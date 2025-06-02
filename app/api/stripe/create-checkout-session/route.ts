@@ -11,16 +11,18 @@ export async function POST(req: NextRequest) {
     const { type, file_uuid, user_id } = await req.json();
     let session;
 
+    // Fetch user profile from 'profiles' table
+    const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('id, email')
+    .eq('id', user_id)
+    .single();
+
     if (type === 'subscription') {
       if (!user_id) {
         return NextResponse.json({ error: 'user_id required for subscription' }, { status: 400 });
       }
-      // Fetch user profile from 'profiles' table
-      const { data: profile, error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, email')
-        .eq('id', user_id)
-        .single();
+      
       if (profileError || !profile) {
         console.log(profileError)
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -33,6 +35,7 @@ export async function POST(req: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+        
       const stripeCustomerId = subscription?.stripe_customer_id || undefined;
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
@@ -69,6 +72,7 @@ export async function POST(req: NextRequest) {
         cancel_url: `${APP_URL}/payment/cancel`,
         metadata: {
           file_uuid,
+          user_id: profile?.id,
           type: 'onetime',
         },
       });

@@ -91,7 +91,6 @@ export async function POST(req: NextRequest) {
         console.error('STRIPE_ONETIME_PRICE_ID is not set.');
         return NextResponse.json({ error: 'Server configuration error for one-time payments.' }, { status: 500 });
       }
-
       stripeSession = await stripe.checkout.sessions.create({
         mode: 'payment',
         payment_method_types: ['card'],
@@ -103,15 +102,11 @@ export async function POST(req: NextRequest) {
         ],
         success_url: successUrl,
         cancel_url: cancelUrl,
-        client_reference_id: user.id,
         metadata: {
           user_id: user.id,
           file_uuid: file_uuid,
         },
-        // For one-time payments, Stripe usually creates a guest customer unless customer ID or email is provided
-        customer_email: stripeCustomerId ? undefined : user.email, // Use existing customer if available, else new one with email
-        customer: stripeCustomerId ? stripeCustomerId : undefined,
-      });
+      } as any);
     } else {
       return NextResponse.json({ error: 'Invalid payment type' }, { status: 400 });
     }

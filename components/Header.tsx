@@ -37,7 +37,7 @@ export const Header: React.FC = () => {
       if (intent === 'signup') {
         setUsernameModalOpen(true);
       } else {
-        setLoginError('Cuenta no registrada. Por favor, crea una cuenta.');
+        setLoginError('Account not registered. Please create one.');
         setLoginModalOpen(true);
       }
       // Limpiar el intent tras usarlo
@@ -51,7 +51,7 @@ export const Header: React.FC = () => {
 
   // Show error if user is not registered (profile missing)
   useEffect(() => {
-    if (error === 'Cuenta no registrada. Por favor, crea una cuenta.') {
+    if (error === 'Account not registered. Please create one.') {
       setLoginError(error);
       setLoginModalOpen(true);
     }
@@ -89,28 +89,10 @@ export const Header: React.FC = () => {
       .select();
     setUsernameLoading(false);
     if (error) {
-      setUsernameError('No se pudo guardar el nombre de usuario.');
+      setUsernameError('Could not save username.');
     } else {
       setUsernameModalOpen(false);
       window.location.reload(); // Refresh user state
-    }
-  };
-
-
-  const handleSubscribe = async () => {
-    // If not logged in, open modal instead of direct Google
-    if (!user) {
-      setLoginModalOpen(true);
-      return;
-    }
-    const res = await fetch('/api/stripe/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'subscription', user_id: user.id }),
-    });
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
     }
   };
 

@@ -1,68 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
+const supabase = supabaseAdmin;
 
 export async function POST(req: NextRequest) {
+  console.log('[Webhook] Incoming Stripe webhook request');
   const buf = await req.arrayBuffer();
   const rawBody = Buffer.from(buf);
   const sig = req.headers.get('stripe-signature');
-
+  console.log('[Webhook] Stripe signature:', sig);
   let event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig!, STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err);
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
-  }
+    event = stripe.webhooks.constructEvent(rawBody, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
+    console.log('[Webhook] Event type:', event.type);
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as any;
+      console.log('[Webhook] Session metadata:', session.metadata);
+      const metadata = session.metadata || {};
+      const type = metadata.type;
 
-  // Procesar solo eventos relevantes
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as any;
-    const metadata = session.metadata || {};
-    const type = metadata.type;
+      if (type === 'subscription') {
+        // Update user in Supabase (activate subscription)
+        const user_id = metadata.user_id;
+        const subscription_id = session.subscription;
+        const customer_id = session.customer;
+        await supabase
+          .from('users')
+          .update({
+            subscription_status: 'active',
+            subscription_id,
+            stripe_customer_id: customer_id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user_id);
+        console.log('[Webhook] Subscription updated for user:', user_id);
+      } else if (type === 'onetime') {
+        console.log("metadata")
+        console.log(metadata)
+        const user_id = metadata.user_id;
+        const file_uuid = metadata.file_uuid;
+        const session_id = session.id;
+        const stripe_payment_id = session.payment_intent || null;
 
-    if (type === 'subscription') {
-      // Actualizar usuario en Supabase (activar suscripción)
-      const user_id = metadata.user_id;
-      const subscription_id = session.subscription;
-      const customer_id = session.customer;
-      await supabase.from('users').update({
-        subscription_status: 'active',
-        subscription_id,
-        stripe_customer_id: customer_id,
-        updated_at: new Date().toISOString(),
-      }).eq('id', user_id);
-      // (Opcional) puedes crear un registro en purchases si quieres trazabilidad
-    } else if (type === 'onetime') {
-      // Registrar compra one-time en purchases
-      const file_uuid = metadata.file_uuid;
-      const session_id = session.id;
-      const amount = session.amount_total ? session.amount_total / 100 : null;
-      const currency = session.currency;
-      // Buscar midi_id por file_uuid
-      const { data: midi, error: midiError } = await supabase
-        .from('midi_files')
-        .select('id')
-        .eq('file_uuid', file_uuid)
-        .single();
-      if (!midi || midiError) {
-        console.error('MIDI file not found for file_uuid:', file_uuid);
-        return NextResponse.json({ error: 'MIDI not found' }, { status: 404 });
+        // Look up midi_file_id from file_uuid
+        const { data: midiFile, error: midiFileError } = await supabase
+          .from('midi_files')
+          .select('id')
+          .eq('id', file_uuid)
+          .single();
+
+        if (!midiFile || midiFileError) {
+          console.error('MIDI file not found for file_uuid:', file_uuid, midiFileError);
+          return NextResponse.json({ error: 'MIDI file not found' }, { status: 404 });
+        }
+
+        // Insert one-time purchase record
+        const { data: purchase, error: purchaseError } = await supabase
+          .from('one_time_purchases')
+          .insert({
+            user_id: user_id,
+            midi_file_id: midiFile.id,
+            stripe_payment_id,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (purchaseError) {
+          console.error('[Webhook] Failed to insert purchase:', purchaseError);
+          return NextResponse.json({ error: 'Failed to insert purchase' }, { status: 500 });
+        }
+        console.log('[Webhook] One-time purchase recorded:', purchase);
+
       }
-      await supabase.from('purchases').insert({
-        user_id: null, // anónimo
-        midi_id: midi.id,
-        stripe_session_id: session_id,
-        type: 'onetime',
-        created_at: new Date().toISOString(),
-        amount,
-        currency,
-      });
     }
+    console.log('[Webhook] Processing completed successfully');
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error('[Webhook] Error processing Stripe webhook:', error);
+    return NextResponse.json({ error: 'Error processing Stripe webhook', details: (error as any).message }, { status: 500 });
   }
-
-  // Stripe exige 200 OK rápido
-  return NextResponse.json({ received: true });
 }
