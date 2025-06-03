@@ -5,9 +5,12 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: NextRequest) {
-  // Check for the secret header
+  // Allow secret via header or query param
   const authHeader = req.headers.get('x-cron-secret');
-  if (!CRON_SECRET || authHeader !== CRON_SECRET) {
+  const { searchParams } = new URL(req.url);
+  const secretParam = searchParams.get('secret');
+
+  if (!CRON_SECRET || (authHeader !== CRON_SECRET && secretParam !== CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
