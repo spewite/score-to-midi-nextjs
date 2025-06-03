@@ -58,6 +58,10 @@ export const Header: React.FC = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth_intent', 'login');
     }
+
+    console.log('process.env.NEXT_PUBLIC_APP_URL:');
+    console.log(process.env.NEXT_PUBLIC_APP_URL);
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: process.env.NEXT_PUBLIC_APP_URL || 'https://score-to-midi.com/' }
