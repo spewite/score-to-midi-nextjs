@@ -44,8 +44,19 @@ export async function POST(req: NextRequest) {
         console.log('[Webhook] Subscription fields:', { user_id, subscription_id, customer_id });
         try {
           // Obtener la suscripción real de Stripe para usar current_period_end exacto
-          const stripeSubscription = await stripe.subscriptions.retrieve(subscription_id);
-          const periodEnd = (stripeSubscription as any).current_period_end;
+          const stripeSubscription = await stripe.subscriptions.retrieve(subscription_id, { expand: ['items'] });
+          let periodEnd = (stripeSubscription as any).current_period_end;
+
+          // Fallback: get from first subscription item if not at top level
+          if (!periodEnd && stripeSubscription.items && stripeSubscription.items.data && stripeSubscription.items.data.length > 0) {
+            periodEnd = stripeSubscription.items.data[0].current_period_end;
+          }
+
+          if (!periodEnd) {
+            console.error('No current_period_end found in subscription or items:', stripeSubscription);
+            return NextResponse.json({ error: 'No valid period end found' }, { status: 500 });
+          }
+
           const { data: updateResult, error: updateError } = await supabase
             .from('subscriptions')
             .upsert({
