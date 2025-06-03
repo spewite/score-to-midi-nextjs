@@ -33,11 +33,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
   // Download permission state
   const [canDownload, setCanDownload] = useState((!!user && user.subscription?.status === 'active') || oneTimePurchased);
-  useEffect(() => {
-    if (canDownload) {
-      toast.success('You can now download the MIDI file');
-    }
-  }, [canDownload]);
 
   useEffect(() => {
     // When the uploaded file changes remove the error.
@@ -234,7 +229,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const handleSubscribe = async () => {
     setShowDownloadModal(false);
     if (!user) {
-      window.location.href = '/';
+      setError('You must be logged in to subscribe.');
       return;
     }
     const res = await fetch('/api/stripe/create-checkout-session', {
@@ -254,6 +249,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   // Polls the backend for subscription status
   const pollForSubscription = () => {
     const interval = setInterval(async () => {
+      console.log('POLLING');
       const res = await fetch('/api/user');
       const data = await res.json();
       console.log('pollForSubscription', data);

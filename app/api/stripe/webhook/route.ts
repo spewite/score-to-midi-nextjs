@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
   const buf = await req.arrayBuffer();
   const rawBody = Buffer.from(buf);
   const sig = req.headers.get('stripe-signature');
-  console.log('[Webhook] Stripe signature:', sig);
   let event;
+
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
     console.log('[Webhook] Event type:', event.type);
@@ -21,23 +21,53 @@ export async function POST(req: NextRequest) {
       const type = metadata.type;
 
       if (type === 'subscription') {
+
+        console.log('session.subscription:', session.subscription);
+
+        // Defensive logging for missing metadata
+        if (!metadata.user_id || !session.subscription || !session.customer) {
+          console.error('[Webhook] Missing required subscription metadata:', {
+            user_id: metadata.user_id,
+            subscription_id: session.subscription,
+            customer_id: session.customer,
+            metadata,
+            session
+          });
+          return NextResponse.json({ error: 'Missing required subscription metadata' }, { status: 400 });
+        }
+
         // Update user in Supabase (activate subscription)
         const user_id = metadata.user_id;
         const subscription_id = session.subscription;
         const customer_id = session.customer;
-        await supabase
-          .from('users')
-          .update({
-            subscription_status: 'active',
-            subscription_id,
-            stripe_customer_id: customer_id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', user_id);
-        console.log('[Webhook] Subscription updated for user:', user_id);
+
+        console.log('[Webhook] Subscription fields:', { user_id, subscription_id, customer_id });
+        try {
+          const { data: updateResult, error: updateError } = await supabase
+            .from('subscriptions')
+            .upsert({
+              user_id,
+              stripe_customer_id: customer_id,
+              stripe_subscription_id: subscription_id,
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' })
+            .select();
+
+          if (updateError) {
+            console.error('[Webhook] Supabase update error:', updateError);
+          } else if (!updateResult || updateResult.length === 0) {
+            console.warn('[Webhook] No subscription row updated for user:', user_id);
+          } else {
+            console.log('[Webhook] Subscription updated for user:', user_id, updateResult);
+          }
+        } catch (err) {
+          console.error('[Webhook] Exception during Supabase update:', err);
+        }
+
       } else if (type === 'onetime') {
-        console.log('metadata');
-        console.log(metadata);
+
         const user_id = metadata.user_id;
         const file_uuid = metadata.file_uuid;
         const stripe_payment_id = session.payment_intent || null;
@@ -57,7 +87,7 @@ export async function POST(req: NextRequest) {
         // Insert one-time purchase record
         const { data: purchase, error: purchaseError } = await supabase
           .from('one_time_purchases')
-          .insert({
+          .upsert({
             user_id: user_id,
             midi_file_id: midiFile.id,
             stripe_payment_id,

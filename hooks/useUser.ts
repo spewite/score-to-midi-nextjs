@@ -46,9 +46,9 @@ export function useUser() {
       if (profile) {
         const { data: sub, error: subError } = await supabase
           .from('subscriptions')
-          .select('id, user_id, stripe_customer_id, stripe_subscription_id, status, current_period_end, created_at')
+          .select('id, user_id, stripe_customer_id, stripe_subscription_id, status, current_period_end, updated_at')
           .eq('user_id', authUser.id)
-          .order('created_at', { ascending: false })
+          .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         if (sub) {
@@ -59,7 +59,7 @@ export function useUser() {
             stripe_subscription_id: sub.stripe_subscription_id,
             status: sub.status,
             current_period_end: sub.current_period_end,
-            created_at: sub.created_at,
+            updated_at: sub.updated_at,
           };
         }
       }
