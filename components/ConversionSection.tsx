@@ -115,8 +115,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
       setMidiUrl(data.midi_url);
       setFileUuid(data.file_uuid);
 
-      console.log(data);
-
       // Insertar registro en Supabase vía Next.js
       try {
         await fetch('/api/midi/insert', {
@@ -249,10 +247,8 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   // Polls the backend for subscription status
   const pollForSubscription = () => {
     const interval = setInterval(async () => {
-      console.log('POLLING');
       const res = await fetch('/api/user');
       const data = await res.json();
-      console.log('pollForSubscription', data);
       if (data.subscription?.status === 'active') {
         clearInterval(interval);
         toast.success('Subscription successful!');
@@ -270,7 +266,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         body: JSON.stringify({ file_uuid: fileUuid }),
       });
       const data = await res.json();
-      console.log('pollForOneTimePurchase', data);
       if (data.success) {
         clearInterval(interval);
         toast.success('One-time purchase successful!');

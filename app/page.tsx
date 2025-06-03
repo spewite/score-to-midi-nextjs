@@ -12,7 +12,9 @@ export default function Home() {
   const { user, loading } = useUser();
 
   useEffect(() => {
-    console.log('User:', user, 'Loading:', loading);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User:', user, 'Loading:', loading);
+    }
   }, [loading, user]);
 
   return (

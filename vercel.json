@@ -1,0 +1,11 @@
+{
+  "cron": [
+    {
+      "path": "/api/cron/cancel-expired-subscriptions",
+      "schedule": "0 7 * * *",
+      "headers": {
+        "x-cron-secret": "${CRON_SECRET}"
+      }
+    }
+  ]
+}

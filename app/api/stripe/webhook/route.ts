@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
 
         console.log('[Webhook] Subscription fields:', { user_id, subscription_id, customer_id });
         try {
+          // Obtener la suscripción real de Stripe para usar current_period_end exacto
+          const stripeSubscription = await stripe.subscriptions.retrieve(subscription_id);
+          const periodEnd = (stripeSubscription as any).current_period_end;
           const { data: updateResult, error: updateError } = await supabase
             .from('subscriptions')
             .upsert({
@@ -50,6 +53,7 @@ export async function POST(req: NextRequest) {
               stripe_customer_id: customer_id,
               stripe_subscription_id: subscription_id,
               status: 'active',
+              current_period_end: new Date(periodEnd * 1000).toISOString(),
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'user_id' })
@@ -104,6 +108,30 @@ export async function POST(req: NextRequest) {
 
       }
     }
+
+    // Handler for invoice.payment_succeeded
+    if (event && event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object as any;
+      // Solo continuar si hay una suscripción asociada
+      if (invoice.subscription) {
+        // Obtener la suscripción actualizada desde Stripe
+        const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+        // current_period_end está en segundos
+        const periodEnd = (subscription as any).current_period_end;
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: subscription.status === 'active' ? 'active' : 'inactive',
+            current_period_end: new Date(periodEnd * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
+        console.log('[Webhook] Subscription renewed and updated in Supabase:', subscription.id);
+      } else {
+        console.log('[Webhook] invoice.payment_succeeded without subscription, ignoring.');
+      }
+      return NextResponse.json({ received: true });
+    } 
     console.log('[Webhook] Processing completed successfully');
     return NextResponse.json({ received: true });
   } catch (error) {
@@ -111,3 +139,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Error processing Stripe webhook', details: (error as any).message }, { status: 500 });
   }
 }
+
