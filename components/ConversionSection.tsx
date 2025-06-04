@@ -1,14 +1,15 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Loader2, Download, Play, Pause, ArrowRight } from "lucide-react"
-import { Midi } from "@tonejs/midi"
-import * as Tone from "tone"
-import { toast } from "sonner"
-import posthog from "posthog-js"
-import WaifuSuggestion from "./WaifuSuggestion"
-
+import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Download, Play, Pause, ArrowRight } from 'lucide-react';
+import { Midi } from '@tonejs/midi';
+import * as Tone from 'tone';
+import { toast } from 'sonner';
+import posthog from 'posthog-js';
+import WaifuSuggestion from './WaifuSuggestion';
+import DownloadModal from './DownloadModal';
+import { User } from '../lib/types';
 interface ConversionSectionProps {
   file: File,
   setFile: (file: File | null) => void;
@@ -16,13 +17,22 @@ interface ConversionSectionProps {
   setMidiUrl: (midiUrl: string | null) => void,
   isConverting: boolean,
   setIsConverting: (isConverting: boolean) => void;
+  user: User | null;
 }
 
-export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting }: ConversionSectionProps) {
-  const [error, setError] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const synth = useRef<Tone.Sampler | null>(null)
-  const midiPlayer = useRef<Tone.Part | null>(null)
+export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting , user }: ConversionSectionProps) {
+ 
+  // State and refs
+  const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [fileUuid, setFileUuid] = useState<string | null>(null);
+  const [oneTimePurchased] = useState(false);
+  const synth = useRef<Tone.Sampler | null>(null);
+  const midiPlayer = useRef<Tone.Part | null>(null);
+
+  // Download permission state
+  const [canDownload, setCanDownload] = useState((!!user && user.subscription?.status === 'active') || oneTimePurchased);
 
   useEffect(() => {
     // When the uploaded file changes remove the error.
@@ -32,100 +42,113 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   useEffect(() => {
     synth.current = new Tone.Sampler({
       urls: {
-        A0: "A0.mp3",
-        C1: "C1.mp3",
-        "D#1": "Ds1.mp3",
-        "F#1": "Fs1.mp3",
-        A1: "A1.mp3",
-        C2: "C2.mp3",
-        "D#2": "Ds2.mp3",
-        "F#2": "Fs2.mp3",
-        A2: "A2.mp3",
-        C3: "C3.mp3",
-        "D#3": "Ds3.mp3",
-        "F#3": "Fs3.mp3",
-        A3: "A3.mp3",
-        C4: "C4.mp3",
-        "D#4": "Ds4.mp3",
-        "F#4": "Fs4.mp3",
-        A4: "A4.mp3",
-        C5: "C5.mp3",
-        "D#5": "Ds5.mp3",
-        "F#5": "Fs5.mp3",
-        A5: "A5.mp3",
-        C6: "C6.mp3",
-        "D#6": "Ds6.mp3",
-        "F#6": "Fs6.mp3",
-        A6: "A6.mp3",
-        C7: "C7.mp3",
-        "D#7": "Ds7.mp3",
-        "F#7": "Fs7.mp3",
-        A7: "A7.mp3",
-        C8: "C8.mp3",
+        A0: 'A0.mp3',
+        C1: 'C1.mp3',
+        'D#1': 'Ds1.mp3',
+        'F#1': 'Fs1.mp3',
+        A1: 'A1.mp3',
+        C2: 'C2.mp3',
+        'D#2': 'Ds2.mp3',
+        'F#2': 'Fs2.mp3',
+        A2: 'A2.mp3',
+        C3: 'C3.mp3',
+        'D#3': 'Ds3.mp3',
+        'F#3': 'Fs3.mp3',
+        A3: 'A3.mp3',
+        C4: 'C4.mp3',
+        'D#4': 'Ds4.mp3',
+        'F#4': 'Fs4.mp3',
+        A4: 'A4.mp3',
+        C5: 'C5.mp3',
+        'D#5': 'Ds5.mp3',
+        'F#5': 'Fs5.mp3',
+        A5: 'A5.mp3',
+        C6: 'C6.mp3',
+        'D#6': 'Ds6.mp3',
+        'F#6': 'Fs6.mp3',
+        A6: 'A6.mp3',
+        C7: 'C7.mp3',
+        'D#7': 'Ds7.mp3',
+        'F#7': 'Fs7.mp3',
+        A7: 'A7.mp3',
+        C8: 'C8.mp3',
       },
       release: 1,
-      baseUrl: "https://tonejs.github.io/audio/salamander/",
-    }).toDestination()
+      baseUrl: 'https://tonejs.github.io/audio/salamander/',
+    }).toDestination();
 
     return () => {
       if (synth.current) {
-        synth.current.dispose()
+        synth.current.dispose();
       }
       if (midiPlayer.current) {
-        midiPlayer.current.dispose()
+        midiPlayer.current.dispose();
       }
-    }
-  }, [])
+    };
+  }, []);
 
+  // Handles file conversion and sets all required state from backend JSON
   const fileConversion = async () => {
-
     posthog.capture('convertButtonClicked', { fileName: file.name });
-
-    setIsConverting(true)
-    setError(null)
-
-    const formData = new FormData()
-    formData.append("file", file)
-
+    setIsConverting(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append('file', file);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/upload`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
-      })
-
+      });
       // Handle error
       if (!response.ok) {
-
-        const reponseData = await response.json();
-        if (reponseData?.error) {
-          throw new Error(reponseData?.error);
+        const responseData = await response.json();
+        if (responseData?.error) {
+          throw new Error(responseData?.error);
         }
-
-        throw new Error("An error occurred during conversion. Please try again.")
+        throw new Error('An error occurred during conversion. Please try again.');
       }
+      // Parse JSON response
+      const data = await response.json();
+      if (!data.midi_url || !data.file_uuid) {
+        throw new Error('Invalid response from server. Please try again.');
+      }
+      setMidiUrl(data.midi_url);
+      setFileUuid(data.file_uuid);
 
-      // Handle success
-      const midiBlob = await response.blob()
-      const midiUrl = URL.createObjectURL(midiBlob)
-      setMidiUrl(midiUrl)
-
+      // Insertar registro en Supabase vía Next.js
+      try {
+        await fetch('/api/midi/insert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: data.file_uuid,
+            score_url: data.score_url,
+            midi_url: data.midi_url,
+            user_id: user?.id || null,
+            filename: file.name,
+          }),
+        });
+      } catch {
+        // Si falla el insert, mostrar error pero no bloquear el flujo principal
+        setError('Error saving MIDI metadata. The MIDI was generated, but could not be saved.');
+      }
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || "An error occurred during conversion. Please try again.")
+        setError(err.message || 'An error occurred during conversion. Please try again.');
       }
       throw err;
     } finally {
-      setIsConverting(false)
+      setIsConverting(false);
     }
-  }
+  };
 
   const handleConversion = () => {
     toast.promise(fileConversion(), {
-      loading: "The conversion may take up to 2 minute 🙌",
-      success: "The score has been converted successfully! 😎",
-      error: "An error occurred during conversion 😬."
-    })
-  }
+      loading: 'The conversion may take up to 2 minute 🙌',
+      success: 'The score has been converted successfully! 😎',
+      error: 'An error occurred during conversion 😬.'
+    });
+  };
 
   const playMidi = async () => {
 
@@ -147,17 +170,14 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         note: note.name,
         duration: note.duration,
         velocity: note.velocity,
-      }))
-    );
+      })));
 
     // Create a new Tone.Part and start it at time 0 of the transport timeline
     midiPlayer.current = new Tone.Part((time, event) => {
-      synth.current?.triggerAttackRelease(
-        event.note,
+      synth.current?.triggerAttackRelease(event.note,
         event.duration,
         time,
-        event.velocity
-      );
+        event.velocity);
     }, midiEvents).start(0);
 
     Tone.Transport.start();
@@ -182,7 +202,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
 
     synth.current?.releaseAll();
     setIsPlaying(false);
-  }
+  };
 
   const handleConvertNext = () => {
     posthog.capture('convertNextClicked', { fileName: file.name });
@@ -191,21 +211,105 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     setMidiUrl(null);
     setFile(null);
     setMidiUrl(null);
-  }
+  };
+
+  // Handler for download button
+  const handleDownloadClick = (e: React.MouseEvent) => {
+    if (!canDownload) {
+      e.preventDefault();
+      setShowDownloadModal(true);
+    } else {
+      posthog.capture('downloadClicked', { fileName: file.name });
+    }
+  };
+
+  // Handler for subscribe button in modal
+  const handleSubscribe = async () => {
+    setShowDownloadModal(false);
+    if (!user) {
+      setError('You must be logged in to subscribe.');
+      return;
+    }
+    const res = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'subscription', user_id: user.id, file_uuid: fileUuid }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      posthog.capture('subscribeClicked', { fileName: file.name });
+      toast('Waiting for payment confirmation...', { duration: 4000 });
+      window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
+      pollForSubscription();
+    }
+  };
+
+  // Polls the backend for subscription status
+  const pollForSubscription = () => {
+    const interval = setInterval(async () => {
+      const res = await fetch('/api/user');
+      const data = await res.json();
+      if (data.subscription?.status === 'active') {
+        clearInterval(interval);
+        toast.success('Subscription successful!');
+        setCanDownload(true);
+      }
+    }, 3000); // Poll every 3 seconds
+  };
+
+  // Polls the backend for a one-time purchase
+  const pollForOneTimePurchase = () => {
+    const interval = setInterval(async () => {
+      const res = await fetch('/api/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_uuid: fileUuid }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        clearInterval(interval);
+        toast.success('One-time purchase successful!');
+        setCanDownload(true);
+      }
+    }, 3000); // Poll every 3 seconds
+  };
+
+  // Handler for one-time purchase button in modal
+  const handleOneTime = async () => {
+    setShowDownloadModal(false);
+    if (!fileUuid) {
+      setError('Missing file UUID for payment. Please try converting again.');
+      return;
+    }
+    // Call backend to create Stripe one-time session
+    const res = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'onetime', file_uuid: fileUuid, user_id: user?.id }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      toast('Waiting for payment confirmation...', { duration: 4000 });
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+      posthog.capture('oneTimePurchaseClicked', { fileName: file.name });
+      pollForOneTimePurchase();
+    }
+  };
 
   return (
     <>
-
       <div className="w-full mt-8 flex flex-col items-center">
         {!midiUrl && (
-          <Button onClick={handleConversion} disabled={isConverting}>
+          <Button
+            onClick={handleConversion}
+            disabled={isConverting}>
             {isConverting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Converting...
               </>
             ) : (
-              "Convert to MIDI"
+              'Convert to MIDI'
             )}
           </Button>
         )}
@@ -226,11 +330,9 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                   className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white transition-all ease-in-out duration-200"
                 >
                   <a
-                    href={midiUrl}
-                    download={file.name.split('.')[0] + ".midi" || "converted_score.midi"}
-                    onClick={() => {
-                      posthog.capture('downloadClicked', { fileName: file.name });
-                    }}
+                    href={canDownload ? midiUrl : '#'}
+                    download={file.name.split('.')[0] + '.midi' || 'converted_score.midi'}
+                    onClick={handleDownloadClick}
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download MIDI
@@ -238,7 +340,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
                 </Button>
                 <Button
                   onClick={isPlaying ? stopMidi : playMidi}
-                  className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? "from-green-600 to-green-900 hover:from-green-700 hover:to-green-800" : "from-red-700 to-red-900 hover:from-red-800 hover:to-red-900"} text-white transition-all ease-in-out duration-200`}
+                  className={`w-full sm:w-auto bg-gradient-to-r ${!isPlaying ? 'from-green-600 to-green-900 hover:from-green-700 hover:to-green-800' : 'from-red-700 to-red-900 hover:from-red-800 hover:to-red-900'} text-white transition-all ease-in-out duration-200`}
                 >
                   {isPlaying ? (
                     <>
@@ -256,7 +358,7 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
               <div className="w-full flex justify-center">
                 <Button
                   className="w-full sm:w-auto bg-gradient-to-r transition ease-in-out duration-200"
-                  variant={"outline"}
+                  variant={'outline'}
                   onClick={handleConvertNext}
                 >
                   <ArrowRight className="h-4 w-4" />
@@ -268,11 +370,18 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
         )}
       </div>
 
-      {error?.includes("Please, upload the image with higher quality.") && (
+      {/* Download Modal for payment options */}
+      <DownloadModal
+        open={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        onSubscribe={handleSubscribe}
+        onOneTime={handleOneTime}
+      />
+
+      {error?.includes('Please, upload the image with higher quality.') && (
         <WaifuSuggestion />
       )}
-
     </>
-  )
+  );
 }
 
