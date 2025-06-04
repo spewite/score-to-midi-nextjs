@@ -33,8 +33,6 @@ export default function MyScores() {
 
   if (loading || loadingScores) return <div className="text-center py-16">Loading...</div>;
 
-  console.log(scores);
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex justify-center flex-grow site-background">
