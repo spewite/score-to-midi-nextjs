@@ -19,8 +19,6 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
 
-    console.log('TEST'); 
-
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (
