@@ -18,6 +18,9 @@ export const Header: React.FC = () => {
   // Detect login error from URL
 
   useEffect(() => {
+
+    console.log('TEST'); 
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (
