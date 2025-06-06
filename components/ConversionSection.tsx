@@ -210,7 +210,6 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     setIsPlaying(false);
     setMidiUrl(null);
     setFile(null);
-    setMidiUrl(null);
   };
 
   // Handler for download button
