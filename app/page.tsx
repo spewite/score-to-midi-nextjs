@@ -28,6 +28,7 @@ export default function Home() {
     console.log('CRON_SECRET:', process.env.CRON_SECRET);
   }, []);
 
+  
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.log('User:', user, 'Loading:', loading);
