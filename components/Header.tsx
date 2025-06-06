@@ -1,5 +1,6 @@
 'use client';
 import { useUser } from '@/hooks/useUser';
+
 import { supabase } from '@/lib/supabaseClient';
 import React from 'react';
 
@@ -22,8 +23,76 @@ function useUsernameSync() {
 }
 
 import { useAuthFlow } from './AuthFlowContext';
+import { usePathname } from 'next/navigation';
+
+// Subcomponente: Menú de usuario con username
+const UserMenu: React.FC<{ user: any; handleLogout: () => void }> = ({ user, handleLogout }) => (
+  <div className="flex items-center gap-4">
+    <div className="relative group">
+      <div className="flex items-center gap-2 cursor-pointer select-none">
+        <span className="hidden sm:inline text-white font-medium">{user.username || user.email}</span>
+        <svg
+          className="w-4 h-4 text-zinc-400 group-hover:text-blue-400 transition-colors"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"><path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7" /></svg>
+      </div>
+      {/* Dropdown menu */}
+      <div className="absolute right-0 mt-2 w-44 bg-zinc-900 border border-zinc-700 rounded shadow-lg opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity z-20">
+        <button
+          className="w-full text-left px-4 py-2 hover:bg-zinc-800 text-white"
+          onClick={() => window.location.href = '/my-scores'}
+        >
+          My Scores
+        </button>
+        <button
+          className="w-full text-left px-4 py-2 hover:bg-zinc-800 text-red-300"
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// Subcomponente: Usuario logueado sin username
+const NoUsernameNotice: React.FC = () => (
+  <div className="flex items-center gap-4">
+    <span className="text-red-400 text-sm">You must set a username to use the app.</span>
+    <Button
+      onClick={() => window.open('/set-username', '_blank', 'noopener,noreferrer')}
+      className="px-4 py-2 bg-blue-800 border border-blue-700 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
+    >
+      Set Username
+    </Button>
+  </div>
+);
+
+// Subcomponente: Login
+const LoginButtons: React.FC<{ open: boolean; onOpenChange: (v: boolean) => void; error: string | null; onGoogle: () => void }> = ({ open, onOpenChange, error, onGoogle }) => (
+  <div className="flex gap-2">
+    <Button
+      onClick={() => onOpenChange(true)}
+      className="px-5 py-2 bg-zinc-900 border border-zinc-700 text-white font-semibold rounded-md shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
+    >
+      Access
+    </Button>
+    <LoginModal
+      open={open}
+      onOpenChange={onOpenChange}
+      error={error}
+      onGoogle={onGoogle}
+    />
+  </div>
+);
 
 export const Header: React.FC = () => {
+  const pathname = usePathname();
   useUsernameSync();
   const { user, loading, error } = useUser();
   const {
@@ -126,61 +195,22 @@ export const Header: React.FC = () => {
             Loading user...
           </div>
         ) : user ? (
-          // Only allow access to the app if the user has a profile (username)
           user.username ? (
-            <>
-              <div className="flex items-center gap-4">
-                <div className="relative group">
-                  <div className="flex items-center gap-2 cursor-pointer select-none">
-                    <span className="hidden sm:inline text-white font-medium">{user.username || user.email}</span>
-                    <svg
-                      className="w-4 h-4 text-zinc-400 group-hover:text-blue-400 transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"><path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7" /></svg>
-                  </div>
-                  {/* Dropdown menu */}
-                  <div className="absolute right-0 mt-2 w-44 bg-zinc-900 border border-zinc-700 rounded shadow-lg opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity z-20">
-                    <button
-                      className="w-full text-left px-4 py-2 hover:bg-zinc-800 text-white"
-                      onClick={() => window.location.href = '/my-scores'}
-                    >
-                      My Scores
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 hover:bg-zinc-800 text-red-300"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
+            <UserMenu
+              user={user}
+              handleLogout={handleLogout} />
           ) : (
-            <></>
+            pathname !== '/set-username' ? <NoUsernameNotice /> : null
           )
         ) : (
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setLoginModalOpen(true)}
-              className="px-5 py-2 bg-zinc-900 border border-zinc-700 text-white font-semibold rounded-md shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
-            >
-              Access
-            </Button>
-            <LoginModal
-              open={loginModalOpen}
-              onOpenChange={setLoginModalOpen}
-              error={loginError}
-              onGoogle={() => {
-                window.open('/auth-redirect', '_blank', 'noopener,noreferrer');
-              }}
-            />
-          </div>
+          <LoginButtons
+            open={loginModalOpen}
+            onOpenChange={setLoginModalOpen}
+            error={loginError}
+            onGoogle={() => {
+              window.open('/auth-redirect', '_blank', 'noopener,noreferrer');
+            }}
+          />
         )}
       </div>
     </header>
