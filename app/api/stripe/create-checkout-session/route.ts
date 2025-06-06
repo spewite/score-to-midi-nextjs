@@ -8,7 +8,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, file_uuid, user_id } = await req.json();
+    const { type, file_uuid, user_id, email } = await req.json();
     let session;
 
     // Fetch user profile from 'profiles' table
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
           user_id: profile?.id,
           type: 'onetime',
         },
+        customer_email: email || profile?.email || undefined,
       });
     } else {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAuthFlow } from './AuthFlowContext';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download, Play, Pause, ArrowRight } from 'lucide-react';
 import { Midi } from '@tonejs/midi';
@@ -21,6 +22,11 @@ interface ConversionSectionProps {
 }
 
 export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConverting, setIsConverting , user }: ConversionSectionProps) {
+  const {
+    setLoginModalOpen,
+    subscribeIntent,
+    setSubscribeIntent,
+  } = useAuthFlow();
  
   // State and refs
   const [error, setError] = useState<string | null>(null);
@@ -226,7 +232,8 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
   const handleSubscribe = async () => {
     setShowDownloadModal(false);
     if (!user) {
-      setError('You must be logged in to subscribe.');
+      setSubscribeIntent(true);
+      setLoginModalOpen(true);
       return;
     }
     const res = await fetch('/api/stripe/create-checkout-session', {
@@ -237,11 +244,19 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
     const data = await res.json();
     if (data.url) {
       posthog.capture('subscribeClicked', { fileName: file.name });
-      toast('Waiting for payment confirmation...', { duration: 4000 });
       window.open(data.url, '_blank', 'noopener,noreferrer'); // Open Stripe in new tab/window
       pollForSubscription();
     }
   };
+
+  // Effect: After login, if subscribeIntent is set, continue subscription flow
+  useEffect(() => {
+    if (user && subscribeIntent) {
+      setSubscribeIntent(false); // clear intent
+      handleSubscribe(); // will run with user present
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, subscribeIntent]);
 
   // Polls the backend for subscription status
   const pollForSubscription = () => {
@@ -281,14 +296,17 @@ export function ConversionSection({ file, setFile, midiUrl, setMidiUrl, isConver
       return;
     }
     // Call backend to create Stripe one-time session
+    const body: any = { type: 'onetime', file_uuid: fileUuid, user_id: user?.id };
+    if (user && user.email) {
+      body.email = user.email;
+    }
     const res = await fetch('/api/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'onetime', file_uuid: fileUuid, user_id: user?.id }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     if (data.url) {
-      toast('Waiting for payment confirmation...', { duration: 4000 });
       window.open(data.url, '_blank', 'noopener,noreferrer');
       posthog.capture('oneTimePurchaseClicked', { fileName: file.name });
       pollForOneTimePurchase();

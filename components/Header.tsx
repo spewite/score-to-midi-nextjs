@@ -5,15 +5,34 @@ import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import LoginModal from './LoginModal';
-import UsernameModal from './UsernameModal';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+
+// Listen for username creation in other tabs and reload user state
+function useUsernameSync() {
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === 'username_set') {
+        // Reload user state or page
+        // window.location.reload();
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
+}
+
+import { useAuthFlow } from './AuthFlowContext';
 
 export const Header: React.FC = () => {
+  useUsernameSync();
   const { user, loading, error } = useUser();
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [usernameLoading, setUsernameLoading] = useState(false);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const {
+    loginModalOpen,
+    setLoginModalOpen,
+    loginError,
+    setLoginError,
+    setUsernameModalOpen,
+  } = useAuthFlow();
 
   // Detect login error from URL
 
@@ -29,22 +48,16 @@ export const Header: React.FC = () => {
         setLoginModalOpen(true);
       }
     }
-  }, []);
+  }, [setLoginError, setLoginModalOpen]);
 
-  // Show username modal only if it's a signup
+  // Show username modal if user is signed up but has no username
   useEffect(() => {
     if (user && !user.username) {
-      const intent = typeof window !== 'undefined' ? localStorage.getItem('auth_intent') : null;
-      if (intent !== 'signup') {
-        setLoginError('Account not registered. Please create one.');
-        setLoginModalOpen(true);
-      }
-      // Limpiar el intent tras usarlo
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_intent');
-      }
+      setUsernameModalOpen(true);
+    } else {
+      setUsernameModalOpen(false);
     }
-  }, [user]);
+  }, [setUsernameModalOpen, user]);
 
   // Show error if user is not registered (profile missing)
   useEffect(() => {
@@ -52,40 +65,13 @@ export const Header: React.FC = () => {
       setLoginError(error);
       setLoginModalOpen(true);
     }
-  }, [error]);
+  }, [error, setLoginError, setLoginModalOpen]);
 
-  const handleGoogleLogin = async () => {
-    // Por defecto, login
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_intent', 'login');
-    }
 
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: process.env.NEXT_PUBLIC_APP_URL || 'https://score-to-midi.com/' }
-    });
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.reload();
-  };
-
-  // Save username in profiles
-  const handleSaveUsername = async (username: string) => {
-    setUsernameLoading(true);
-    setUsernameError(null);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username })
-      .eq('id', user?.id)
-      .select();
-    setUsernameLoading(false);
-    if (error) {
-      setUsernameError('Could not save username.');
-    } else {
-      window.location.reload(); // Refresh user state
-    }
   };
 
   return (
@@ -176,17 +162,7 @@ export const Header: React.FC = () => {
               </div>
             </>
           ) : (
-            // If the user is authenticated but has no profile, force the username modal
-            <UsernameModal
-              open={true}
-              onSave={handleSaveUsername}
-              loading={usernameLoading}
-              error={usernameError}
-              // Custom message depending on intent
-              message={typeof window !== 'undefined' && localStorage.getItem('auth_intent') === 'signup'
-                ? 'Welcome! Complete your registration by creating a username.'
-                : 'You don\'t have a profile. Complete your registration to continue.'}
-            />
+            <></>
           )
         ) : (
           <div className="flex gap-2">
@@ -199,8 +175,10 @@ export const Header: React.FC = () => {
             <LoginModal
               open={loginModalOpen}
               onOpenChange={setLoginModalOpen}
-              onGoogle={handleGoogleLogin}
               error={loginError}
+              onGoogle={() => {
+                window.open('/auth-redirect', '_blank', 'noopener,noreferrer');
+              }}
             />
           </div>
         )}
