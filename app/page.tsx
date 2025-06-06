@@ -12,6 +12,23 @@ export default function Home() {
   const { user, loading } = useUser();
 
   useEffect(() => {
+    // Log all public env variables
+    console.log('NEXT_PUBLIC_BACKEND_URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+    console.log('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+    console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    console.log('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+    // Log secrets (not recommended for production, but OK for staging as you said)
+    console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY);
+    console.log('STRIPE_WEBHOOK_SECRET:', process.env.STRIPE_WEBHOOK_SECRET);
+    console.log('STRIPE_SUBSCRIPTION_PRICE_ID:', process.env.STRIPE_SUBSCRIPTION_PRICE_ID);
+    console.log('STRIPE_ONETIME_MIDI_PRICE_ID:', process.env.STRIPE_ONETIME_MIDI_PRICE_ID);
+    console.log('CRON_SECRET:', process.env.CRON_SECRET);
+  }, []);
+
+  useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.log('User:', user, 'Loading:', loading);
     }
